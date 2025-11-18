@@ -1,7 +1,7 @@
 package com.thanhluu.tlcn.Controller.Employee.MedicalRecord;
 
 
-import com.thanhluu.tlcn.DTO.request.MedicalRecordDetail.MedicalRecordDetailUpdateRequest;
+import com.thanhluu.tlcn.DTO.request.MedicalRecordDetail.UpdateMedicalRecordDetailRequest;
 import com.thanhluu.tlcn.Service.Employee.IMedicalRecordDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -22,14 +22,14 @@ public class MedicalRecordDetailController {
     // Lấy thông tin chi tiết của bệnh án sắp xếp theo thứ tự từ mới nhất đến cũ nhất
     @GetMapping("/{id}")
     public ResponseEntity<?> getMRD(@PathVariable String id,
-                                    @PageableDefault(size = 5, sort = "updatedDate", direction = Sort.Direction.DESC) Pageable pageable) {
+                                    @PageableDefault(size = 5) Pageable pageable) {
         return new ResponseEntity<>(mrdService.getLatestMedicalRecordDetailById(id, pageable), HttpStatus.OK);
     }
 
     // Tạo mới thông tin chi tiết cho bệnh án
-    @PostMapping("/{id}/update")
+    @PutMapping("/{id}/update")
     public ResponseEntity<?> updateMedicalRecord(@PathVariable String id,
-                                                 @RequestBody MedicalRecordDetailUpdateRequest resqDTO){
+                                                 @RequestBody UpdateMedicalRecordDetailRequest resqDTO){
         return new ResponseEntity<>(mrdService.updateMRD(resqDTO, id), HttpStatus.OK);
     }
 }

@@ -7,16 +7,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+
+import static java.time.LocalDateTime.now;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class MedicalRecordRequest {
 
-    private Date createdDate;
+    private LocalDateTime createdDate = now();
 
-    private String employeePhonenumber;
+    private String employeePhoneNumber;
 
     private Pet_MedicalRecordRequest pet;
 

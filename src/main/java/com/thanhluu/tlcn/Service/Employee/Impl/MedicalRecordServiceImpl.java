@@ -1,12 +1,12 @@
 package com.thanhluu.tlcn.Service.Employee.Impl;
 
 import com.thanhluu.tlcn.DTO.request.MedicalRecord.MedicalRecordRequest;
-import com.thanhluu.tlcn.DTO.response.MedicalRecord.GetAll_MedicalRecordResponse;
 import com.thanhluu.tlcn.DTO.response.MedicalRecord.MedicalRecordResponse;
 import com.thanhluu.tlcn.DTO.response.MedicalRecordDetail.MRDResponse;
+import com.thanhluu.tlcn.DTO.response.MedicalRecordDetail.ViewAllDetailByPhoneNumberResp;
 import com.thanhluu.tlcn.DTO.response.Pet.Pet_MedicalRecordResponse;
 import com.thanhluu.tlcn.DTO.response.User.User_MedicalRecordResponse;
-import com.thanhluu.tlcn.Entity.MedicalRecordDetailEnitty;
+import com.thanhluu.tlcn.Entity.MedicalRecordDetailEntity;
 import com.thanhluu.tlcn.Entity.MedicalRecordEntity;
 import com.thanhluu.tlcn.Entity.PetEntity;
 import com.thanhluu.tlcn.Entity.UserEntity;
@@ -21,9 +21,9 @@ import com.thanhluu.tlcn.Repository.PetRepository;
 import com.thanhluu.tlcn.Repository.UserRepository;
 import com.thanhluu.tlcn.Service.Employee.IMedicalRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class MedicalRecordServiceImpl implements IMedicalRecordService {
@@ -68,7 +68,7 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
         petRepository.save(petEntity);
 
         // Lấy thông tin của nhân viên tạo bệnh án
-        String employeePhonenumber = medicalRecordRequest.getEmployeePhonenumber();
+        String employeePhonenumber = medicalRecordRequest.getEmployeePhoneNumber();
 
         UserEntity employee = userRepository.findByPhoneNumber(employeePhonenumber)
                 .orElseThrow(() -> new BadRequestException(ErrorCode.EMPLOYEE_NOT_FOUND));
@@ -84,7 +84,7 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
 
         // Lấy thông tin về chi tiết bệnh án rồi truyền về entity
 
-        MedicalRecordDetailEnitty mrdEntity = medicalRecordMapper.toEntity_MRD(medicalRecordRequest);
+        MedicalRecordDetailEntity mrdEntity = medicalRecordMapper.toEntity_MRD(medicalRecordRequest);
         mrdEntity.setMedicalRecord(medicalRecordEntity);
 
         mrdRepository.save(mrdEntity);
@@ -97,18 +97,9 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
     }
 
     @Override
-    public List<GetAll_MedicalRecordResponse> getAllMedicalRecordsByCustomerPhonenumber(String phonenumber) {
-
-        UserEntity owner = userRepository.findByPhoneNumber(phonenumber)
-                .orElseThrow(() -> new BadRequestException(ErrorCode.OWNER_NOT_FOUND));
-        List<PetEntity> pets = owner.getPets();
-
-
-        List<MedicalRecordEntity> medicalRecords = pets.stream()
-                .map(PetEntity::getMedicalRecordEntity)
-                .toList();
-
-        return medicalRecordMapper.toListDTO_GetAll(medicalRecords);
+    public Page<ViewAllDetailByPhoneNumberResp> getAllMedicalRecordsByCustomerPhoneNumber(String phoneNumber, Pageable pageable) {
+        Page<MedicalRecordEntity> medicalRecords = medicalRecordRepository.findByOwnerPhoneNumber(phoneNumber, pageable);
+        return medicalRecords.map(medicalRecordMapper::toDTO_ViewAllDetails);
     }
 
 }

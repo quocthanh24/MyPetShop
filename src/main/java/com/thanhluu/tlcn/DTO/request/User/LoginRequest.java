@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class UserLoginRequest {
+public class LoginRequest {
 
     @NotEmpty(message = "Gmail should not be empty")
     private String gmail;

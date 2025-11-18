@@ -1,9 +1,7 @@
 package com.thanhluu.tlcn.Controller.Employee.Product;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thanhluu.tlcn.Annotation.ValidImage;
-import com.thanhluu.tlcn.DTO.request.Product.ProductRequest;
-import com.thanhluu.tlcn.DTO.response.Product.ProductResponse;
+import com.thanhluu.tlcn.DTO.response.Product.ProductResp;
 import com.thanhluu.tlcn.Service.Employee.IImageService;
 import com.thanhluu.tlcn.Service.Employee.IProductService;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees/products")
@@ -33,9 +31,6 @@ public class ProductController {
 
     @Autowired
     private IImageService imageService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     // ---------- Product CRUD ----------
 
@@ -67,47 +62,47 @@ public class ProductController {
 			return ResponseEntity.ok(productService.deleteById(id));
 		}
 
-    @PostMapping
-    public ResponseEntity<?> createProduct(@RequestBody ProductRequest request) {
-			ProductResponse product = productService.create(request);
-			return ResponseEntity.status(HttpStatus.CREATED).body(product);
+    /**
+     * Update product with multiple images (multipart/form-data)
+     * Expects "data" as JSON string and "files" as list of images
+     * Follows RESTful convention: PUT /{id}
+     */
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProduct(
+            @PathVariable("id") String id,
+            @RequestPart("data") String productJson,
+            @RequestPart(value = "thumbnail", required = false) @ValidImage  MultipartFile thumbnail,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) {
+        ProductResp product = productService.updateWithImages(id, productJson, thumbnail,files);
+        return ResponseEntity.ok(product);
     }
-
-		@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-		public ResponseEntity<?> updateProduct(
-			@RequestPart String productJson,
-			@RequestPart MultipartFile file) {
-			try {
-				ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
-				if (file != null && !file.isEmpty()) {
-					String imageUrl = imageService.uploadImage(file, "products");
-					request.setImageURL(imageUrl);
-				}
-				return new ResponseEntity<>(productService.update(request), HttpStatus.CREATED);
-			} catch (Exception ex) {
-				return new ResponseEntity<>("Failed to create product: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}
 
     /**
      * Create product with image (multipart/form-data)
      * Expects "data" as JSON string and optional "file" for image
      */
-    @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/create-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createProductWithImage(
+      @RequestPart("data") String productJson,
+      @RequestPart(value = "thumbnail", required = false)
+      @ValidImage MultipartFile thumbnail) {
+      return new ResponseEntity<>(productService.createWithImage(productJson, thumbnail), HttpStatus.CREATED);
+    }
+
+    /**
+     * Create product with multiple images (multipart/form-data)
+     * Expects "data" as JSON string, optional "thumbnail" for thumbnail image, and "files" as list of regular images
+     * JSON parsing and business logic handled in service layer
+     */
+    @PostMapping(value = "/create-with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createProductWithImages(
             @RequestPart("data") String productJson,
-            @RequestPart(value = "file", required = false) @ValidImage MultipartFile file
+            @RequestPart(value = "thumbnail", required = false) @ValidImage MultipartFile thumbnail,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        try {
-            ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
-            if (file != null && !file.isEmpty()) {
-                String imageUrl = imageService.uploadImage(file, "products");
-                request.setImageURL(imageUrl);
-            }
-            return new ResponseEntity<>(productService.create(request), HttpStatus.CREATED);
-        } catch (Exception ex) {
-            return new ResponseEntity<>("Failed to create product: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        ProductResp product = productService.createWithImages(productJson, thumbnail, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(product);
     }
 
     // ---------- Product Image Endpoints ----------
@@ -133,28 +128,38 @@ public class ProductController {
     }
 
     /**
-     * View product image by Product ID (RESTful style)
-     * Gets image from MinIO using product's imageURL stored in database
+     * View product thumbnail image by Product ID (RESTful style)
+     * Gets image from MinIO using product's thumbnailUrl stored in database
      */
-    @GetMapping("/{id}/image")
-    public ResponseEntity<?> viewProductImageByProductId(@PathVariable("id") String id) {
+    @GetMapping("/{id}/thumbnail")
+    public ResponseEntity<?> viewProductThumbnailByProductId(@PathVariable("id") String id) {
         try {
-            ProductResponse product = productService.findById(id);
-            if (product == null || product.getImageURL() == null || product.getImageURL().isEmpty()) {
-                return new ResponseEntity<>("Product image not found", HttpStatus.NOT_FOUND);
+            ProductResp product = productService.findById(id);
+            if (product == null || product.getThumbnailUrl() == null || product.getThumbnailUrl().isEmpty()) {
+                return new ResponseEntity<>("Product thumbnail not found", HttpStatus.NOT_FOUND);
             }
             
-            InputStream stream = imageService.getImage(product.getImageURL());
+            InputStream stream = imageService.getImage(product.getThumbnailUrl());
             InputStreamResource resource = new InputStreamResource(stream);
-            MediaType mediaType = resolveMediaType(product.getImageURL());
+            MediaType mediaType = resolveMediaType(product.getThumbnailUrl());
             
             return ResponseEntity.ok()
                     .contentType(mediaType)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"product-" + id + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"product-thumbnail-" + id + "\"")
                     .body(resource);
         } catch (Exception ex) {
-            return new ResponseEntity<>("Failed to load image: " + ex.getMessage(), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Failed to load thumbnail: " + ex.getMessage(), HttpStatus.NOT_FOUND);
         }
+    }
+    
+    /**
+     * @deprecated Use /{id}/thumbnail instead
+     * View product image by Product ID (RESTful style) - kept for backward compatibility
+     */
+    @Deprecated
+    @GetMapping("/{id}/image")
+    public ResponseEntity<?> viewProductImageByProductId(@PathVariable("id") String id) {
+        return viewProductThumbnailByProductId(id);
     }
 
     /**
@@ -177,25 +182,35 @@ public class ProductController {
     }
 
     /**
-     * Delete product image by Product ID (RESTful style)
+     * Delete product thumbnail by Product ID (RESTful style)
      */
-    @DeleteMapping("/{id}/image")
-    public ResponseEntity<?> deleteProductImageByProductId(@PathVariable("id") String id) {
+    @DeleteMapping("/{id}/thumbnail")
+    public ResponseEntity<?> deleteProductThumbnailByProductId(@PathVariable("id") String id) {
         try {
-            ProductResponse product = productService.findById(id);
-            if (product == null || product.getImageURL() == null || product.getImageURL().isEmpty()) {
-                return new ResponseEntity<>("Product image not found", HttpStatus.NOT_FOUND);
+            ProductResp product = productService.findById(id);
+            if (product == null || product.getThumbnailUrl() == null || product.getThumbnailUrl().isEmpty()) {
+                return new ResponseEntity<>("Product thumbnail not found", HttpStatus.NOT_FOUND);
             }
             
-            boolean deleted = imageService.deleteImage(product.getImageURL());
+            boolean deleted = imageService.deleteImage(product.getThumbnailUrl());
             if (deleted) {
-                return ResponseEntity.ok("Image deleted successfully");
+                return ResponseEntity.ok("Thumbnail deleted successfully");
             } else {
-                return new ResponseEntity<>("Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>("Failed to delete thumbnail", HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (Exception ex) {
-            return new ResponseEntity<>("Failed to delete image: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Failed to delete thumbnail: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    /**
+     * @deprecated Use /{id}/thumbnail instead
+     * Delete product image by Product ID (RESTful style) - kept for backward compatibility
+     */
+    @Deprecated
+    @DeleteMapping("/{id}/image")
+    public ResponseEntity<?> deleteProductImageByProductId(@PathVariable("id") String id) {
+        return deleteProductThumbnailByProductId(id);
     }
 
     /**

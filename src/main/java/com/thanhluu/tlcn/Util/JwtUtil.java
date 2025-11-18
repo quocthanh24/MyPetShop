@@ -25,13 +25,15 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    public String generateToken(String email) { // Use email as username
+    public String generateToken(String email, String userId) { // Use email as username
         Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
         return createToken(claims, email);
     }
 
-    public String generateRefreshToken(String email) {
+    public String generateRefreshToken(String email, String userId) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
         return createRefreshToken(claims, email);
     }
 
@@ -66,6 +68,10 @@ public class JwtUtil {
 
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public String extractUserId(String token) {
+        return extractAllClaims(token).get("userId", String.class);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

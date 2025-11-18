@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 
@@ -21,10 +22,10 @@ public class MedicalRecordDetailRequest {
     private String medicalHistory;
 
     @NotNull
-    private Date updatedDate;
+    private LocalDateTime updatedDate;
 
     @NotEmpty
-    private double temperature;
+    private Double temperature;
 
     @NotNull
     private String vaccines;

@@ -1,6 +1,6 @@
 package com.thanhluu.tlcn.Service.Employee.Impl;
 
-import com.thanhluu.tlcn.DTO.request.Category.CategoryCreateRequest;
+import com.thanhluu.tlcn.DTO.request.Category.CreateCategoryRequest;
 import com.thanhluu.tlcn.DTO.response.Category.CategoryResponse;
 import com.thanhluu.tlcn.Entity.CategoryEntity;
 import com.thanhluu.tlcn.Enum.ErrorCode;
@@ -25,7 +25,7 @@ public class CategoryServiceImpl implements ICategoryService {
     private CategoryMapper categoryMapper;
 
     @Override
-    public CategoryResponse save(CategoryCreateRequest categoryRequestDTOCreate) {
+    public CategoryResponse save(CreateCategoryRequest categoryRequestDTOCreate) {
 
         CategoryEntity categoryEntity = categoryMapper.toEntity(categoryRequestDTOCreate);
         categoryRepository.save(categoryEntity);
@@ -40,7 +40,7 @@ public class CategoryServiceImpl implements ICategoryService {
     }
 
     @Override
-    public CategoryResponse update(CategoryCreateRequest categoryRequestDTOCreate, String id) {
+    public CategoryResponse update(CreateCategoryRequest categoryRequestDTOCreate, String id) {
 
         CategoryEntity categoryEntity = categoryRepository.findById(UUID.fromString(id))
           .orElseThrow(() -> new BadRequestException(ErrorCode.CATEGORY_NOT_FOUND));

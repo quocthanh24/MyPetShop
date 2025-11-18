@@ -13,11 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductRequest {
+    private String id; // For update operations
     @NotNull(message = "Name should not be null")
     private String name;
     @PositiveOrZero(message = "Price should be greater or equal 0")
     private Double price;
-    private String imageURL;
+    private String thumbnailUrl;
     @PositiveOrZero(message = "Stock quantity should be greater or equal 0")
     private Integer stockQuantity;
     @NotNull(message = "Product status should not be null")

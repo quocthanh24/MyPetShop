@@ -4,17 +4,20 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductResponse {
+public class ProductResp {
     private UUID id;
     private String name;
     private Double price;
-    private String imageURL;
+    private String thumbnailUrl;
     private Integer stockQuantity;
     private String status;
     private String petType;
     private String categoryName;
+    private List<String> imageUrls;
 }

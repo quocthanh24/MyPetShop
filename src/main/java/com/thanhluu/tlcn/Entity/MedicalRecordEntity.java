@@ -32,5 +32,5 @@ public class MedicalRecordEntity {
     private PetEntity pet;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "medicalRecord")
-    private List<MedicalRecordDetailEnitty> medicalRecordDetailEnitties;
+    private List<MedicalRecordDetailEntity> medicalRecordDetailEntities;
 }

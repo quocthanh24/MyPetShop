@@ -37,15 +37,15 @@ public class AuthenticateController {
 
         try {
             String username = jwtUtil.extractUsername(refreshToken);
-
+            String userId = jwtUtil.extractUserId(refreshToken);
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             // Kiểm tra refreshToken có hợp lệ không
             if (jwtUtil.validateToken(refreshToken, userDetails)) {
-                String newAccessToken = jwtUtil.generateToken(username);
+                String newAccessToken = jwtUtil.generateToken(username,userId);
                 return ResponseEntity.ok(Map.of(
+                            "userId", userId,
                         "access_token", newAccessToken,
                         "refresh_token", refreshToken
-
                          ));
             }
             else {

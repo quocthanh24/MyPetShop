@@ -1,8 +1,6 @@
 package com.thanhluu.tlcn.DTO.request.MedicalRecordDetail;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +10,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class MedicalRecordDetailUpdateRequest {
+public class UpdateMedicalRecordDetailRequest {
 
     @NotEmpty(message = "Health Condition should not be empty")
     private String healthCondition;
@@ -23,8 +21,8 @@ public class MedicalRecordDetailUpdateRequest {
     @NotEmpty(message = "Updated Date should not be empty")
     private Date updatedDate;
 
-    @NotEmpty(message = "Temperature should not be empty")
-    private double temperature;
+    @DecimalMin(value = "30.0", message = "Temperature must be at least 30°C")
+    private Double temperature;
 
     @NotNull(message = "Vaccines should not be null")
     private String vaccines;

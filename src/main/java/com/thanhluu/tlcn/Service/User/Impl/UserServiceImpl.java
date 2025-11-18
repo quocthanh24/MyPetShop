@@ -2,6 +2,7 @@ package com.thanhluu.tlcn.Service.User.Impl;
 
 
 import com.thanhluu.tlcn.DTO.request.User.UserRequest;
+import com.thanhluu.tlcn.DTO.request.User.VerifyOtpRegisterRequest;
 import com.thanhluu.tlcn.DTO.response.User.UserResponse;
 import com.thanhluu.tlcn.Enum.ErrorCode;
 import com.thanhluu.tlcn.Enum.Role;
@@ -9,7 +10,9 @@ import com.thanhluu.tlcn.Entity.UserEntity;
 import com.thanhluu.tlcn.Exeception.BadRequestException;
 import com.thanhluu.tlcn.Mapper.UserMapper;
 import com.thanhluu.tlcn.Repository.UserRepository;
+import com.thanhluu.tlcn.Service.OTPService;
 import com.thanhluu.tlcn.Service.User.IUserService;
+import com.thanhluu.tlcn.Util.JavaMailUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -29,6 +32,8 @@ public class UserServiceImpl implements IUserService, UserDetailsService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final OTPService otpService;
+    private final JavaMailUtil javaMailUtil;
 
     PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -44,16 +49,6 @@ public class UserServiceImpl implements IUserService, UserDetailsService {
                 List.of(new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().name())));
     }
 
-    @Override
-    public UserResponse register(UserRequest dto) {
-        System.out.println(dto.toString());
-        UserEntity userEntity = userMapper.toEntity(dto);
-        System.out.println(userEntity.toString());
-        userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
-        userEntity.setRole(Role.CUSTOMER);
-        userRepository.save(userEntity);
-        return userMapper.toDTO(userEntity);
-    }
 
     @Override
     public UserEntity login(String id) {
@@ -70,6 +65,36 @@ public class UserServiceImpl implements IUserService, UserDetailsService {
     public UserEntity findById(String id) {
         return userRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NO_EXIST));
+    }
+
+    @Override
+    public UserEntity findByGmail(String email) {
+        return userRepository.findByGmail(email)
+          .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+    @Override
+    public boolean existsByGmail(String email) {
+        return userRepository.findByGmail(email).isPresent();
+    }
+
+    @Override
+    public UserResponse registerWithOtp(VerifyOtpRegisterRequest dto) {
+        // Kiểm tra email đã tồn tại chưa
+        if (existsByGmail(dto.getGmail())) {
+            throw new BadRequestException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        // Verify OTP
+        if (!otpService.verifyOtp(dto.getGmail(), dto.getOtpCode())) {
+            throw new BadRequestException(ErrorCode.INVALID_OTP);
+        }
+
+        UserEntity userEntity = userMapper.toEntity(dto);
+        userEntity.setRole(Role.CUSTOMER);
+        userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userRepository.save(userEntity);
+        return userMapper.toDTO(userEntity);
     }
 
 

@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -36,10 +38,23 @@ public class ProductEntity {
     @Column(nullable = false)
     private PetType petType;
 
-    @Column(nullable = false, length = 300)
-    private String imageURL;
+    @Column(length = 300)
+    private String thumbnailUrl;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    private Double averageRating = 0.0;
+
+    private Integer ratingCount = 0;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private CategoryEntity category;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ImageItemEntity> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    private List<CartItemEntity>  cartItems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    private List<RatingEntity> ratings = new ArrayList<>();
 }

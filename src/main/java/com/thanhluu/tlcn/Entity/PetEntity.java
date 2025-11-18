@@ -41,7 +41,7 @@ public class PetEntity {
     @JoinColumn(name = "customer_id", nullable = false)
     private UserEntity owner;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "pet")
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "pet")
     private MedicalRecordEntity medicalRecordEntity;
 
     @PrePersist

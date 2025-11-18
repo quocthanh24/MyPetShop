@@ -2,13 +2,14 @@ package com.thanhluu.tlcn.Mapper;
 
 import com.thanhluu.tlcn.DTO.request.MedicalRecord.MedicalRecordRequest;
 
-import com.thanhluu.tlcn.DTO.request.MedicalRecordDetail.MedicalRecordDetailUpdateRequest;
+import com.thanhluu.tlcn.DTO.request.MedicalRecordDetail.UpdateMedicalRecordDetailRequest;
 import com.thanhluu.tlcn.DTO.response.MedicalRecord.GetAll_MedicalRecordResponse;
 import com.thanhluu.tlcn.DTO.response.MedicalRecord.MedicalRecordResponse;
 import com.thanhluu.tlcn.DTO.response.MedicalRecordDetail.MRDResponse;
+import com.thanhluu.tlcn.DTO.response.MedicalRecordDetail.ViewAllDetailByPhoneNumberResp;
 import com.thanhluu.tlcn.DTO.response.Pet.Pet_MedicalRecordResponse;
 import com.thanhluu.tlcn.DTO.response.User.User_MedicalRecordResponse;
-import com.thanhluu.tlcn.Entity.MedicalRecordDetailEnitty;
+import com.thanhluu.tlcn.Entity.MedicalRecordDetailEntity;
 import com.thanhluu.tlcn.Entity.MedicalRecordEntity;
 
 import org.mapstruct.Mapper;
@@ -20,7 +21,8 @@ import java.util.List;
 public interface MedicalRecordMapper {
 
     @Mapping(source = "medicalRecordEntity.createdDate", target = "createdDate")
-    @Mapping(source = "medicalRecordEntity.employee.phoneNumber", target = "employeePhonenumber")
+    @Mapping(source = "medicalRecordEntity.employee.phoneNumber", target = "employeePhoneNumber")
+    @Mapping(source = "medicalRecordEntity.id", target = "medicalRecordId")
     MedicalRecordResponse toDTO(MedicalRecordEntity medicalRecordEntity,
                                 Pet_MedicalRecordResponse pet ,
                                 User_MedicalRecordResponse owner,
@@ -32,8 +34,6 @@ public interface MedicalRecordMapper {
     @Mapping(source = "medicalRecordEntity.pet" , target = "pet")
     GetAll_MedicalRecordResponse toDTO_GetAll(MedicalRecordEntity medicalRecordEntity);
 
-    List<GetAll_MedicalRecordResponse> toListDTO_GetAll (List<MedicalRecordEntity> entities);
-
     // Phần cho Medical Record Detail
 
     @Mapping(source = "reqDTO.recordDetails.healthCondition" , target = "healthCondition")
@@ -42,13 +42,15 @@ public interface MedicalRecordMapper {
     @Mapping(source = "reqDTO.recordDetails.temperature" , target = "temperature")
     @Mapping(source = "reqDTO.recordDetails.vaccines" , target = "vaccines")
     @Mapping(source = "reqDTO.recordDetails.diagnosisResult" , target = "diagnosisResult")
-    MedicalRecordDetailEnitty toEntity_MRD(MedicalRecordRequest reqDTO);
+    MedicalRecordDetailEntity toEntity_MRD(MedicalRecordRequest reqDTO);
 
-    MRDResponse toDTO_MRD(MedicalRecordDetailEnitty medicalRecordDetailEnitty);
+    MRDResponse toDTO_MRD(MedicalRecordDetailEntity medicalRecordDetailEntity);
 
-    List<MRDResponse> toListDTO_MRD(List<MedicalRecordDetailEnitty> medicalRecordDetailEnitties);
-
-    MedicalRecordDetailEnitty toEntity_Update(MedicalRecordDetailUpdateRequest reqDTO);
+    @Mapping(source = "id", target = "medicalRecordId")
+    @Mapping(source = "employee.fullName", target = "createdBy")
+    @Mapping(source = "medicalRecordDetailEntities", target = "medicalRecordDetails")
+    ViewAllDetailByPhoneNumberResp toDTO_ViewAllDetails(MedicalRecordEntity medicalRecordEntity);
+    MedicalRecordDetailEntity toEntity_Update(UpdateMedicalRecordDetailRequest reqDTO);
 
 
 }

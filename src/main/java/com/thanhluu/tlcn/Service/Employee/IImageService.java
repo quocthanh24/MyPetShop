@@ -3,6 +3,7 @@ package com.thanhluu.tlcn.Service.Employee;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.List;
 
 public interface IImageService {
     
@@ -20,7 +21,7 @@ public interface IImageService {
      * @return InputStream of the image
      */
     InputStream getImage(String imageUrl);
-    
+
     /**
      * Delete image from MinIO
      * @param imageUrl URL of the image to delete

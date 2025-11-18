@@ -1,6 +1,6 @@
 package com.thanhluu.tlcn.Controller.Employee.Product;
 
-import com.thanhluu.tlcn.DTO.request.Category.CategoryCreateRequest;
+import com.thanhluu.tlcn.DTO.request.Category.CreateCategoryRequest;
 import com.thanhluu.tlcn.Service.Employee.ICategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +17,7 @@ public class CategoryController {
     private ICategoryService categoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createCategory(@RequestBody @Validated CategoryCreateRequest category_CreateResp) {
+    public ResponseEntity<?> createCategory(@RequestBody @Validated CreateCategoryRequest category_CreateResp) {
         return new ResponseEntity<>(categoryService.save(category_CreateResp), HttpStatus.CREATED);
     }
 
@@ -29,7 +29,7 @@ public class CategoryController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateCategory(
-                @RequestBody @Validated CategoryCreateRequest category_CreateResp,
+                @RequestBody @Validated CreateCategoryRequest category_CreateResp,
                 @PathVariable String id
                                             ) {
         return new ResponseEntity<>(categoryService.update(category_CreateResp, id), HttpStatus.OK);

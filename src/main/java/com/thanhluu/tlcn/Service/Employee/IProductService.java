@@ -1,19 +1,22 @@
 package com.thanhluu.tlcn.Service.Employee;
 
-import com.thanhluu.tlcn.DTO.request.Product.ProductRequest;
 import com.thanhluu.tlcn.DTO.response.Message.MessageResponse;
-import com.thanhluu.tlcn.DTO.response.Product.ProductResponse;
-import com.thanhluu.tlcn.Entity.ProductEntity;
+import com.thanhluu.tlcn.DTO.response.Product.ProductResp;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface IProductService {
 
-    Page<ProductResponse> getAllProduct(Pageable pageable);
-    ProductResponse findById(String id);
-    Page<ProductResponse> findByCategory(String categoryName, Pageable pageable);
-    Page<ProductResponse> findByKeyWord(String keyword, Pageable pageable);
-    ProductResponse create(ProductRequest req);
+    Page<ProductResp> getAllProduct(Pageable pageable);
+    ProductResp findById(String id);
+    Page<ProductResp> findByCategory(String categoryName, Pageable pageable);
+    Page<ProductResp> findByKeyWord(String keyword, Pageable pageable);
+    ProductResp createWithImage(String productJson, MultipartFile thumbnail);
     MessageResponse deleteById(String id);
+    ProductResp createWithImages(String productJson, MultipartFile thumbnail, List<MultipartFile> files);
+    ProductResp updateWithImages(String id, String productJson, MultipartFile thumbnail, List<MultipartFile> files);
 
 }

@@ -50,13 +50,27 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-
-    // mappedBy -> trỏ đến prop của table được ánh xạ
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "owner")
     private List<PetEntity> pets;
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "customer", orphanRemoval = true)
+    private List<OrderEntity> orders;
+
+    @OneToMany(fetch = FetchType.LAZY,orphanRemoval = true, mappedBy = "customer")
+    private List<UserDiscountEntity> discounts;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "employee")
     private List<MedicalRecordEntity> medicalRecordEntities;
 
+    @OneToOne(mappedBy = "customer", orphanRemoval = true)
+    private CartEntity cart;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AppointmentEntity>  appointmentsAsCustomer;
+
+    @OneToMany(mappedBy = "employee")
+    private List<AppointmentEntity> appointmentsAsEmployee;
+
+    @OneToMany(mappedBy = "customer")
+    private List<RatingEntity> ratings;
 }
