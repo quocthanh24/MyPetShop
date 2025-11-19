@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface UserDiscountRepository extends JpaRepository<UserDiscountEntity, Integer> {
+public interface UserDiscountRepository extends JpaRepository<UserDiscountEntity, UUID> {
   Optional<UserDiscountEntity> findByCustomerAndDiscount(UserEntity customer, DiscountEntity discount);
 }

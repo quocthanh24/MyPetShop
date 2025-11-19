@@ -1,10 +1,8 @@
 package com.thanhluu.tlcn.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -12,7 +10,8 @@ import java.util.UUID;
 @Table(name = "cart_items", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"cart_id", "product_id"})
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -24,10 +23,12 @@ public class CartItemEntity {
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "cart_id", nullable = false)
+  @JsonIgnore
   private CartEntity cart;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "product_id", nullable = false)
+  @JsonIgnore
   private ProductEntity product;
 
   private Integer quantity;

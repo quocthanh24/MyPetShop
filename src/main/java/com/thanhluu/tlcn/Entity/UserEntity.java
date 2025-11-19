@@ -3,17 +3,15 @@ package com.thanhluu.tlcn.Entity;
 
 import com.thanhluu.tlcn.Enum.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Data // sinh getter, setter, toString, equals, hashCode
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

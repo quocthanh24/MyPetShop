@@ -14,6 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class OrderResp {
+  private String orderId;
+  private String orderNumber;
   private String shippingAddress;
   private String phoneNumber;
   private Double totalPrice;

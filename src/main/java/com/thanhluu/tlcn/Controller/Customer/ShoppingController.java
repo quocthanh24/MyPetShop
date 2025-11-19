@@ -32,14 +32,4 @@ public class ShoppingController {
     return ResponseEntity.status(HttpStatus.CREATED).body(customerService.addToCart(req));
   }
 
-  @PutMapping("/update-cart")
-  public ResponseEntity<?> updateCart(@RequestBody @Validated AddToCartRequest req) {
-    return ResponseEntity.status(HttpStatus.OK).body(customerService.updateCart(req));
-  }
-
-  @DeleteMapping("/delete-item-from-cart")
-  public ResponseEntity<?> deleteItemFromCart(@RequestParam @NotNull(message = "Item ID should not be null") String itemId) {
-    return null;
-  }
-
 }

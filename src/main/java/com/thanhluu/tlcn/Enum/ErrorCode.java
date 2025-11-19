@@ -43,6 +43,9 @@ public enum ErrorCode {
     RATING_UPDATED_FAILED(1130, "Rating updated failed", HttpStatus.INTERNAL_SERVER_ERROR),
     NO_PRODUCT_SELECTED(1131, "No product selected", HttpStatus.NOT_FOUND),
     CART_ITEM_NOT_BELONG_TO_USER(1132, "Cart Item Do Not Belong to User", HttpStatus.BAD_REQUEST),
+    ITEM_NOT_FOUND(1133, "Item not found", HttpStatus.NOT_FOUND),
+    INVALID_SIGNATURE(1134, "Invalid signature", HttpStatus.BAD_REQUEST),
+    MISSING_RESULT_CODE(1135, "Missing result code", HttpStatus.BAD_REQUEST),
     OTHER_EXCEPTIONS(1999, "System error has occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int responseCode;

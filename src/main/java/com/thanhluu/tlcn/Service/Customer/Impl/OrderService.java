@@ -4,8 +4,7 @@ package com.thanhluu.tlcn.Service.Customer.Impl;
 import com.thanhluu.tlcn.DTO.request.Order.CartOrderReq;
 import com.thanhluu.tlcn.DTO.request.Order.OrderCreateReq;
 import com.thanhluu.tlcn.DTO.request.Order.OrderItemReq;
-import com.thanhluu.tlcn.DTO.response.Order.CancelOrderResp;
-import com.thanhluu.tlcn.DTO.response.Order.OrderItemResp;
+import com.thanhluu.tlcn.DTO.response.Order.OrderStatusResp;
 import com.thanhluu.tlcn.DTO.response.Order.OrderResp;
 import com.thanhluu.tlcn.Entity.*;
 import com.thanhluu.tlcn.Enum.DiscountStatus;
@@ -14,11 +13,14 @@ import com.thanhluu.tlcn.Enum.OrderStatus;
 import com.thanhluu.tlcn.Exeception.BadRequestException;
 import com.thanhluu.tlcn.Mapper.OrderMapper;
 import com.thanhluu.tlcn.Repository.*;
+import com.thanhluu.tlcn.Service.Customer.ICartItemService;
 import com.thanhluu.tlcn.Service.Customer.IOrderService;
 import com.thanhluu.tlcn.Service.Shipping.IShippingFeeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,8 +36,6 @@ public class OrderService implements IOrderService {
   @Autowired
   private OrderDetailRepository orderDetailRepository;
   @Autowired
-  private IShippingFeeService shippingFeeService;
-  @Autowired
   private OrderMapper orderMapper;
   @Autowired
   private OrderRepository orderRepository;
@@ -49,9 +49,8 @@ public class OrderService implements IOrderService {
   private CartItemRepository cartItemRepository;
   @Autowired
   private UserDiscountRepository userDiscountRepository;
-
-  private static final String STORE_ADDRESS = "123 Lê Lợi, Quận 1, TP.HCM";
-
+  @Autowired
+  private ICartItemService cartItemService;
 
   @Override
   public OrderResp cartOrder(String userId, CartOrderReq request) {
@@ -70,7 +69,7 @@ public class OrderService implements IOrderService {
     OrderEntity order = OrderEntity.builder()
       .orderNumber(generateOrderNumber())
       .shippingAddress(request.getShippingAddress())
-      .shippingFee(150000d)
+//      .shippingFee(150000d)
       .phoneNumber(request.getPhoneNumber())
       .note(request.getNote())
       .paymentMethod(request.getPaymentMethod())
@@ -79,11 +78,6 @@ public class OrderService implements IOrderService {
       .customer(customer)
       .build();
 
-
-
-//    Double shippingFee = shippingFeeService.calculateShippingFee(STORE_ADDRESS, request.getShippingAddress());
-//    order.setShippingFee(shippingFee);
-//    log.info("Auto mode shipping fee calculated: {}", shippingFee);
     orderRepository.save(order);
 
     List<OrderDetailEntity> orderDetails = new ArrayList<>();
@@ -108,7 +102,8 @@ public class OrderService implements IOrderService {
     orderDetailRepository.saveAll(orderDetails);
 
     // Cập nhật shopping cart
-
+    log.info("Cart Item Id is {}", request.getCartItemIds());
+    cartItemService.deleteAllByIds(request.getCartItemIds());
     return orderMapper.toOrderResp(order);
   }
 
@@ -141,7 +136,7 @@ public class OrderService implements IOrderService {
       .phoneNumber(request.getPhoneNumber())
       .note(request.getNote())
       .totalPrice(orderDetail.getTotalPrice())
-      .shippingFee(1500d)
+//      .shippingFee(1500d)
       .paymentMethod(request.getPaymentMethod())
       .orderDate(LocalDateTime.now())
       .orderStatus(OrderStatus.PENDING)
@@ -161,13 +156,28 @@ public class OrderService implements IOrderService {
     return orderMapper.toOrderResp(newOrder);
   }
 
+
   @Override
-  public CancelOrderResp cancelOrder(String orderNumber) {
+  public OrderStatusResp updateOrderStatus(String orderNumber, OrderStatus orderStatus) {
     OrderEntity order = orderRepository.findByOrderNumber(orderNumber)
       .orElseThrow(() -> new BadRequestException(ErrorCode.ORDER_NOT_FOUND));
-    order.setOrderStatus(OrderStatus.CANCELED);
+    order.setOrderStatus(orderStatus);
     orderRepository.save(order);
-    return orderMapper.toCancelOrderResp(order);
+    return orderMapper.toOrderStatusResp(order);
+  }
+
+  @Override
+  public Page<OrderStatusResp> getAllOrdersArePaid(OrderStatus orderStatus, Pageable pageable) {
+    Page<OrderEntity> orders = orderRepository.findAllByOrderStatus(orderStatus, pageable);
+    return orders.map(order -> orderMapper.toOrderStatusResp(order));
+  }
+
+  @Override
+  public Page<OrderStatusResp> getAllOrderByUser(String userId, Pageable pageable) {
+    UserEntity customer = userRepository.findById(UUID.fromString(userId))
+      .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NO_EXIST));
+    Page<OrderEntity> orders = orderRepository.findAllByCustomer(customer, pageable);
+    return orders.map(order -> orderMapper.toOrderStatusResp(order));
   }
 
   private String generateOrderNumber() {

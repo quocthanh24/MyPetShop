@@ -42,8 +42,9 @@ public class SecurityConfig {
                 // Configure endpoint authorization
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/api/register-with-otp", "/api/login", "/api/request-otp").permitAll()
-                        
+                        .requestMatchers("/api/register-with-otp", "/api/login", "/api/request-otp", "/api/payment/momo/ipn").permitAll()
+
+                        .requestMatchers("/api/payment/momo/create").hasRole("CUSTOMER")
                         // Health check endpoints
                         .requestMatchers("/actuator/**").permitAll()
 
