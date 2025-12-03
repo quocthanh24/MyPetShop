@@ -98,6 +98,18 @@ public class JavaMailUtil {
     sendEmail(snapshot.customerEmail(), "Nhắc lịch hẹn", buildReminderContent(snapshot));
   }
 
+  public void sendOrderCodeEmail(String email, String orderCode, String customerName) {
+    if (email == null || email.isBlank()) {
+      log.warn("Skip sending order code email due to missing recipient email");
+      return;
+    }
+
+    String subject = "Mã vận đơn của đơn hàng của bạn";
+    String content = buildOrderTracking(customerName, orderCode);
+
+    sendEmail(email, subject, content);
+  }
+
   private void sendEmail(String recipient, String subject, String content) {
     try {
       MimeMessage message = mailSender.createMimeMessage();
@@ -192,6 +204,18 @@ public class JavaMailUtil {
     }
     return "• Ghi chú: " + description;
   }
+
+  private String buildOrderTracking(String customerName, String orderCode) {
+    return "Xin chào " + customerName + ",<br/><br/>" +
+      "Đơn hàng của bạn đã được tạo thành công.<br/><br/>" +
+      "Mã vận đơn của bạn là: <b>" + orderCode + "</b><br/><br/>" +
+      "Bạn có thể theo dõi trạng thái đơn hàng tại đường dẫn sau:<br/>" +
+      "<a href='https://tracking.ghn.dev/?order_code=" + orderCode + "'>" +
+      "Tra cứu đơn hàng tại GHN" +
+      "</a><br/><br/>" +
+      "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!";
+  }
+
 
   private String formatDate(LocalDateTime time) {
     if (time == null) {

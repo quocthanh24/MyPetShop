@@ -41,20 +41,21 @@ public class SecurityConfig {
 
                 // Configure endpoint authorization
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/register-with-otp", "/api/login", "/api/request-otp", "/api/payment/momo/ipn").permitAll()
+                  // Public endpoints
+                  .requestMatchers("/api/register-with-otp", "/api/login", "/api/request-otp", "/api/payment/momo/ipn").permitAll()
 
-                        .requestMatchers("/api/payment/momo/create").hasRole("CUSTOMER")
-                        // Health check endpoints
-                        .requestMatchers("/actuator/**").permitAll()
+                  .requestMatchers("/api/payment/momo/create").hasRole("CUSTOMER")
+                  .requestMatchers("/api/shipment/**").permitAll()
+                  // Health check endpoints
+                  .requestMatchers("/actuator/**").permitAll()
 
-                        // Role-based endpoints
-                        .requestMatchers("/api/users/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/employees/**").hasRole("EMPLOYEE")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                  // Role-based endpoints
+                  .requestMatchers("/api/users/**").hasRole("CUSTOMER")
+                  .requestMatchers("/api/employees/**").hasRole("EMPLOYEE")
+                  .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
+                  // All other endpoints require authentication
+                  .anyRequest().authenticated()
                 )
 
                 // Stateless session (required for JWT)

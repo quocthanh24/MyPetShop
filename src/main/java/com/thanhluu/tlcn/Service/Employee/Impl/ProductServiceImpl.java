@@ -56,6 +56,7 @@ public class ProductServiceImpl implements IProductService {
           .map(productMapper::toResponseDTO);
     }
 
+
     @Override
     public ProductResp findById(String id) {
         ProductEntity productEntity = productRepository.findById(UUID.fromString(id))
@@ -316,5 +317,17 @@ public class ProductServiceImpl implements IProductService {
         }
     }
 
+    @Override
+    public byte[] getProductThumbnail(String id) {
+        ProductEntity product = productRepository.findById(UUID.fromString(id))
+          .orElseThrow(() -> new BadRequestException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        String thumbnailUrl = product.getThumbnailUrl();
+        if (thumbnailUrl == null || thumbnailUrl.isEmpty()) {
+            throw new BadRequestException(ErrorCode.INVALID_REQUEST_BODY);
+        }
+
+        return imageService.downloadImage(thumbnailUrl);
+    }
 
 }

@@ -18,5 +18,5 @@ public interface IProductService {
     MessageResponse deleteById(String id);
     ProductResp createWithImages(String productJson, MultipartFile thumbnail, List<MultipartFile> files);
     ProductResp updateWithImages(String id, String productJson, MultipartFile thumbnail, List<MultipartFile> files);
-
+    byte[] getProductThumbnail(String id);
 }

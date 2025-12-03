@@ -40,14 +40,14 @@ public class ProductController {
     }
 
 		// Find product by keyword
-		@GetMapping("/search")
+		@GetMapping("/get-by-category")
 		public ResponseEntity<?> findProductByKeyword(@RequestParam String keyword,Pageable pageable) {
 			return ResponseEntity.ok(productService.findByKeyWord(keyword, pageable));
 		}
 
 		// Find product by category name
-		@GetMapping("/get-by-category")
-		public ResponseEntity<?> getProductsByCategory(@RequestParam String categoryName,Pageable pageable) {
+		@GetMapping("/search")
+		public ResponseEntity<?> searchBy(@RequestParam String categoryName,Pageable pageable) {
 			return ResponseEntity.ok(productService.findByCategory(categoryName, pageable));
 		}
 

@@ -46,6 +46,12 @@ public enum ErrorCode {
     ITEM_NOT_FOUND(1133, "Item not found", HttpStatus.NOT_FOUND),
     INVALID_SIGNATURE(1134, "Invalid signature", HttpStatus.BAD_REQUEST),
     MISSING_RESULT_CODE(1135, "Missing result code", HttpStatus.BAD_REQUEST),
+    PROVINCES_EXISTED(1136, "Provinces already exist, Do not import", HttpStatus.BAD_REQUEST),
+    DISTRICTS_EXISTED(1137, "Districts already exist", HttpStatus.BAD_REQUEST),
+    WARDS_EXISTED(1138, "Wards already exist, Do not import", HttpStatus.BAD_REQUEST),
+    INVALID_ADDRESS(1139, "Invalid address format", HttpStatus.BAD_REQUEST),
+    WARD_NOT_FOUND(1140, "Ward not found", HttpStatus.NOT_FOUND),
+    DISTRICT_NOT_FOUND(1141, "District not found", HttpStatus.NOT_FOUND),
     OTHER_EXCEPTIONS(1999, "System error has occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int responseCode;

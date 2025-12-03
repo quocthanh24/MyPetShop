@@ -5,6 +5,7 @@ import com.thanhluu.tlcn.DTO.request.Order.CartOrderReq;
 import com.thanhluu.tlcn.DTO.request.Order.OrderCreateReq;
 import com.thanhluu.tlcn.DTO.response.Order.OrderStatusResp;
 import com.thanhluu.tlcn.DTO.response.Order.OrderResp;
+import com.thanhluu.tlcn.DTO.response.Order.OrderTrackingResp;
 import com.thanhluu.tlcn.Enum.OrderStatus;
 import com.thanhluu.tlcn.Service.Customer.IOrderService;
 import jakarta.validation.Valid;
@@ -44,7 +45,7 @@ public class OrderController {
   }
 
   @GetMapping("/tracking")
-  public ResponseEntity<Page<OrderStatusResp>> tracking(Pageable pageable, @RequestParam String userId) {
+  public ResponseEntity<Page<OrderTrackingResp>> tracking(Pageable pageable, @RequestParam String userId) {
     return new ResponseEntity<>(orderService.getAllOrderByUser(userId, pageable), HttpStatus.OK);
   }
 

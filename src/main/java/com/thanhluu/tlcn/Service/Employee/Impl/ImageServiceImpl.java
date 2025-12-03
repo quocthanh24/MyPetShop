@@ -102,6 +102,26 @@ public class ImageServiceImpl implements IImageService {
     }
 
     @Override
+    public byte[] downloadImage(String imageUrl) {
+        try {
+            // Extract object name from URL
+            String objectName = extractObjectNameFromUrl(imageUrl);
+
+            InputStream inputStream = minioClient.getObject(
+              GetObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectName)
+                .build()
+            );
+
+            // Convert InputStream to byte array
+            return inputStream.readAllBytes();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download image: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public boolean imageExists(String imageUrl) {
         try {
             // Extract object name from URL

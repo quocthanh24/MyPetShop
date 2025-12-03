@@ -28,7 +28,9 @@ public interface IImageService {
      * @return true if deleted successfully
      */
     boolean deleteImage(String imageUrl);
-    
+
+    byte[] downloadImage(String imageUrl);
+
     /**
      * Check if image exists in MinIO
      * @param imageUrl URL of the image
