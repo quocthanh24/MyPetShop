@@ -10,5 +10,9 @@ public class ShipmentRequestFromOwner {
   private String senderName;
   private String senderPhone;
   private String senderAddress;
+  private Integer height;
+  private Integer weight;
+  private Integer length;
+  private Integer width;
   private RequiredNote requiredNote;
 }

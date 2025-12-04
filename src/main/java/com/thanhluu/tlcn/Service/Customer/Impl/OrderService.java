@@ -241,6 +241,7 @@ public class OrderService implements IOrderService {
   @Override
   public String createShippingOrderByOrderNumber(ShipmentRequestFromOwner request) {
     // Ordernumber , fromAdrress, height, width, length, weight, requirement Note
+    log.info("Shipping Request : {}", request.toString());
     OrderEntity order = orderRepository.findByOrderNumber(request.getOrderNumber())
       .orElseThrow(() -> new BadRequestException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -250,6 +251,8 @@ public class OrderService implements IOrderService {
       .phoneNumber(request.getSenderPhone())
       .fullName(request.getSenderName())
       .build();
+    log.info("Sender address is {}", sender.getAddress());
+    log.info("Customer address is {}", customer.getAddress());
     AddressReq fromAddress = findAddress(sender);
     AddressReq toAddress = findAddress(customer);
 
@@ -277,12 +280,12 @@ public class OrderService implements IOrderService {
       .toName(toAddress.getName())
       .toProvinceName(toAddress.getProvinceName())
 
-      .height(shippingDefaultUtil.getDefaultHeight())
-      .width(shippingDefaultUtil.getDefaultWidth())
-      .length(shippingDefaultUtil.getDefaultLength())
-      .weight(shippingDefaultUtil.getDefaultWeight())
+      .height(request.getHeight())
+      .width(request.getWidth())
+      .length(request.getLength())
+      .weight(request.getWeight())
       .paymentTypeId(order.getOrderStatus().equals(OrderStatus.PENDING) ? 1 : 2)
-      .serviceTypeId(shippingDefaultUtil.getDefaultWeight() <= 20000 ? 2 : 5)
+      .serviceTypeId(request.getWeight() <= 20000 ? 2 : 5)
       .requiredNote(request.getRequiredNote())
       .build();
 
