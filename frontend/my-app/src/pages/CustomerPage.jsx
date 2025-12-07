@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { cartAPI, orderAPI, petAPI, customerProductAPI, paymentAPI } from '../services/api';
+import { cartAPI, orderAPI, petAPI, customerProductAPI, paymentAPI, customerAppointmentAPI } from '../services/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -12,7 +12,7 @@ const CustomerPage = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const activeTab = searchParams.get('tab') || 'products'; // 'products', 'cart', 'pets', 'profile'
+  const activeTab = searchParams.get('tab') || 'products'; // 'products', 'cart', 'pets', 'profile', 'appointments'
   
   // Cart states
   const [cartItems, setCartItems] = useState([]);
@@ -87,6 +87,12 @@ const CustomerPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState([]);
 
+  // Appointments states
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentLoading, setAppointmentLoading] = useState(false);
+  const [appointmentPage, setAppointmentPage] = useState(0);
+  const [appointmentTotalPages, setAppointmentTotalPages] = useState(1);
+
   // Redirect to products tab if no tab specified
   useEffect(() => {
     if (isAuthenticated && user?.role === 'CUSTOMER' && !searchParams.get('tab')) {
@@ -116,6 +122,15 @@ const CustomerPage = () => {
       loadProducts();
     }
   }, [productPage, searchKeyword, selectedCategory]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'CUSTOMER' && activeTab === 'appointments') {
+      const userId = user?.userId || localStorage.getItem('userId');
+      if (userId) {
+        loadAppointments(userId);
+      }
+    }
+  }, [isAuthenticated, user, activeTab, appointmentPage]);
 
   // Load cart
   const loadCart = async () => {
@@ -548,6 +563,39 @@ const CustomerPage = () => {
       setProductTotalPages(0);
     } finally {
       setProductsLoading(false);
+    }
+  };
+
+  // Load appointments
+  const loadAppointments = async (userId) => {
+    try {
+      setAppointmentLoading(true);
+      const response = await customerAppointmentAPI.getAppointments(userId, appointmentPage, 10);
+      console.log('Appointments response:', response.data);
+      
+      if (response.data?.content) {
+        setAppointments(response.data.content);
+        
+        if (response.data.page) {
+          setAppointmentTotalPages(response.data.page.totalPages || 1);
+        }
+      } else {
+        setAppointments([]);
+        setAppointmentTotalPages(1);
+      }
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      if (error.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else if (error.response?.status === 403) {
+        alert('Bạn không có quyền truy cập trang này.');
+      } else {
+        alert('Có lỗi xảy ra khi tải danh sách lịch hẹn.');
+      }
+      setAppointments([]);
+      setAppointmentTotalPages(1);
+    } finally {
+      setAppointmentLoading(false);
     }
   };
 
@@ -1184,6 +1232,128 @@ const CustomerPage = () => {
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Appointments Tab */}
+      {activeTab === 'appointments' && (
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Lịch Hẹn Của Bạn</h2>
+          
+          {appointmentLoading ? (
+            <Card>
+              <div className="text-center py-12">
+                <p className="text-gray-500">Đang tải lịch hẹn...</p>
+              </div>
+            </Card>
+          ) : appointments.length === 0 ? (
+            <Card>
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 text-lg mb-2">Bạn chưa có lịch hẹn nào</p>
+                <p className="text-gray-400 text-sm">Liên hệ nhân viên để đặt lịch hẹn</p>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {appointments.map((appointment) => (
+                <Card key={appointment.id} className="border-l-4 border-blue-500">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">
+                        Lịch Hẹn #{appointment.id?.substring(0, 8)}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Thời gian hẹn:</p>
+                          <p className="font-semibold">{new Date(appointment.appointmentTime).toLocaleString('vi-VN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Trạng thái:</p>
+                          <p className={`font-semibold ${
+                            appointment.status === 'SCHEDULED' ? 'text-blue-600' :
+                            appointment.status === 'COMPLETED' ? 'text-green-600' :
+                            appointment.status === 'CANCELLED' ? 'text-red-600' :
+                            'text-gray-600'
+                          }`}>
+                            {appointment.status === 'SCHEDULED' ? 'Đã lên lịch' :
+                             appointment.status === 'COMPLETED' ? 'Hoàn thành' :
+                             appointment.status === 'CANCELLED' ? 'Đã hủy' :
+                             appointment.status}
+                          </p>
+                        </div>
+                        {appointment.acceptedBy && (
+                          <div>
+                            <p className="text-gray-600">Nhân viên tiếp nhận:</p>
+                            <p className="font-semibold">{appointment.acceptedBy}</p>
+                          </div>
+                        )}
+                        {appointment.description && (
+                          <div>
+                            <p className="text-gray-600">Mô tả:</p>
+                            <p className="font-semibold">{appointment.description}</p>
+                          </div>
+                        )}
+                        {appointment.customer && (
+                          <>
+                            <div>
+                              <p className="text-gray-600">Khách hàng:</p>
+                              <p className="font-semibold">{appointment.customer.fullName || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Số điện thoại:</p>
+                              <p className="font-semibold">{appointment.customer.phoneNumber || 'N/A'}</p>
+                            </div>
+                          </>
+                        )}
+                        {appointment.createdDate && (
+                          <div>
+                            <p className="text-gray-600">Ngày tạo:</p>
+                            <p className="font-semibold">{new Date(appointment.createdDate).toLocaleString('vi-VN')}</p>
+                          </div>
+                        )}
+                        {appointment.modifiedDate && (
+                          <div>
+                            <p className="text-gray-600">Ngày cập nhật:</p>
+                            <p className="font-semibold">{new Date(appointment.modifiedDate).toLocaleString('vi-VN')}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              {/* Pagination */}
+              {appointmentTotalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setAppointmentPage((p) => Math.max(0, p - 1));
+                    }}
+                    disabled={appointmentPage === 0}
+                  >
+                    Trước
+                  </Button>
+                  <span className="px-4 py-2">
+                    Trang {appointmentPage + 1} / {appointmentTotalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setAppointmentPage((p) => Math.min(appointmentTotalPages - 1, p + 1));
+                    }}
+                    disabled={appointmentPage >= appointmentTotalPages - 1}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Place Order Modal */}

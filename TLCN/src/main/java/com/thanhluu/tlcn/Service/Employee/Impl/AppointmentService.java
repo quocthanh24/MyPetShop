@@ -43,6 +43,15 @@ public class AppointmentService implements IAppointmentService {
   }
 
   @Override
+  public Page<AppointmentResp> getAppointmentsByCustomer(String userId, Pageable pageable) {
+    UserEntity customer = userRepository.findById(UUID.fromString(userId))
+      .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
+
+    Page<AppointmentEntity> appointments = appointmentRepository.findAllByCustomerAndStatus(customer, AppointmentStatus.SCHEDULED, pageable);
+    return appointments.map(appointmentMapper::toDTO);
+  }
+
+  @Override
   public AppointmentResp bookAppointment(CreateAppointmentReq request) {
     UserEntity customer = userRepository.findByPhoneNumber(request.getCustomerPhoneNumber())
       .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NO_EXIST));

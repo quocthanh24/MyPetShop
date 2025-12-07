@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { employeeProductAPI, categoryAPI, medicalRecordAPI, employeeDeliveryAPI } from '../services/api';
+import { employeeProductAPI, categoryAPI, medicalRecordAPI, employeeDeliveryAPI, employeeAppointmentAPI, employeeDiscountAPI } from '../services/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 // Component để lấy ảnh URL với authentication
 const useProductImageUrl = (productId) => {
@@ -132,7 +133,61 @@ const EmployeePage = () => {
   const [formLoading, setFormLoading] = useState(false);
 
   // Medical Record states
-  const [activeTab, setActiveTab] = useState('products'); // 'products', 'medicalRecords', or 'delivery'
+  const [activeTab, setActiveTab] = useState('products'); // 'products', 'medicalRecords', 'delivery', 'appointments', 'categories', or 'discounts'
+  
+  // Appointment states
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentPage, setAppointmentPage] = useState(0);
+  const [appointmentTotalPages, setAppointmentTotalPages] = useState(1);
+  const [appointmentLoading, setAppointmentLoading] = useState(false);
+  const [showCreateAppointmentModal, setShowCreateAppointmentModal] = useState(false);
+  const [showUpdateAppointmentModal, setShowUpdateAppointmentModal] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [appointmentFormData, setAppointmentFormData] = useState({
+    customerPhoneNumber: '',
+    employeeId: '',
+    appointmentTime: '',
+    status: 'SCHEDULED',
+    description: '',
+  });
+  const [appointmentFormLoading, setAppointmentFormLoading] = useState(false);
+  
+  // Category states (for management tab)
+  const [categoryPage, setCategoryPage] = useState(0);
+  const [categoryTotalPages, setCategoryTotalPages] = useState(1);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: '',
+    description: '',
+  });
+  const [categoryFormLoading, setCategoryFormLoading] = useState(false);
+  
+  // Discount states
+  const [discounts, setDiscounts] = useState([]);
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountPage, setDiscountPage] = useState(0);
+  const [discountTotalPages, setDiscountTotalPages] = useState(1);
+  const [discountStatus, setDiscountStatus] = useState('ACTIVE');
+  const [showCreateManualDiscountModal, setShowCreateManualDiscountModal] = useState(false);
+  const [showCreateAutoDiscountModal, setShowCreateAutoDiscountModal] = useState(false);
+  const [manualDiscountFormData, setManualDiscountFormData] = useState({
+    discountCode: '',
+    discountName: '',
+    percent: '',
+    startDate: '',
+    endDate: '',
+  });
+  const [autoDiscountFormData, setAutoDiscountFormData] = useState({
+    discountName: '',
+    percent: '',
+    startDate: '',
+    endDate: '',
+    totalLimit: '',
+  });
+  const [discountFormLoading, setDiscountFormLoading] = useState(false);
   
   // Delivery states
   const [deliveryOrders, setDeliveryOrders] = useState([]);
@@ -244,6 +299,48 @@ const EmployeePage = () => {
       setCategories(data);
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  const loadCategoriesForManagement = async () => {
+    try {
+      setCategoryLoading(true);
+      const response = await categoryAPI.getAll(categoryPage, 10);
+      const data = response.data?.content || [];
+      setCategories(data);
+      
+      if (response.data?.page?.totalPages !== undefined) {
+        setCategoryTotalPages(response.data.page.totalPages);
+      } else if (response.data?.totalPages !== undefined) {
+        setCategoryTotalPages(response.data.totalPages);
+      } else {
+        setCategoryTotalPages(1);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      setCategories([]);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const loadAppointments = async () => {
+    try {
+      setAppointmentLoading(true);
+      const response = await employeeAppointmentAPI.getAll(appointmentPage, 10);
+      const data = response.data?.content || [];
+      setAppointments(data);
+      
+      if (response.data?.page?.totalPages !== undefined) {
+        setAppointmentTotalPages(response.data.page.totalPages || 1);
+      } else {
+        setAppointmentTotalPages(1);
+      }
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      setAppointments([]);
+    } finally {
+      setAppointmentLoading(false);
     }
   };
 
@@ -766,6 +863,361 @@ const EmployeePage = () => {
     });
   };
 
+  // Appointment functions
+  const handleCreateAppointment = async (e) => {
+    e.preventDefault();
+    
+    if (!appointmentFormData.customerPhoneNumber.trim()) {
+      alert('Vui lòng nhập số điện thoại khách hàng');
+      return;
+    }
+    if (!appointmentFormData.appointmentTime) {
+      alert('Vui lòng chọn thời gian hẹn');
+      return;
+    }
+    if (!user?.userId) {
+      alert('Không tìm thấy thông tin nhân viên');
+      return;
+    }
+
+    try {
+      setAppointmentFormLoading(true);
+      const formattedDateTime = appointmentFormData.appointmentTime 
+        ? `${appointmentFormData.appointmentTime}:00`
+        : '';
+      
+      const appointmentData = {
+        customerPhoneNumber: appointmentFormData.customerPhoneNumber.trim(),
+        employeeId: user.userId,
+        appointmentTime: formattedDateTime,
+        status: appointmentFormData.status,
+        description: appointmentFormData.description.trim() || '',
+      };
+      
+      await employeeAppointmentAPI.create(appointmentData);
+      alert('Đã tạo lịch hẹn thành công!');
+      setShowCreateAppointmentModal(false);
+      resetAppointmentForm();
+      loadAppointments();
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      if (error.response?.data?.message) {
+        alert(`Lỗi: ${error.response.data.message}`);
+      } else {
+        alert('Có lỗi xảy ra khi tạo lịch hẹn');
+      }
+    } finally {
+      setAppointmentFormLoading(false);
+    }
+  };
+
+  const handleUpdateAppointment = async (e) => {
+    e.preventDefault();
+    
+    if (!editingAppointment) return;
+    if (!appointmentFormData.appointmentTime) {
+      alert('Vui lòng chọn thời gian hẹn');
+      return;
+    }
+
+    // Get userId from localStorage or user context
+    const userId = user?.userId || localStorage.getItem('userId');
+    if (!userId) {
+      alert('Không tìm thấy thông tin nhân viên');
+      return;
+    }
+
+    try {
+      setAppointmentFormLoading(true);
+      // Format datetime: convert from "YYYY-MM-DDTHH:mm" to "YYYY-MM-DDTHH:mm:00"
+      const formattedDateTime = appointmentFormData.appointmentTime 
+        ? `${appointmentFormData.appointmentTime}:00`
+        : '';
+      
+      const appointmentData = {
+        employeeId: userId,
+        appointmentTime: formattedDateTime,
+        status: appointmentFormData.status,
+        description: appointmentFormData.description.trim() || '',
+      };
+      
+      await employeeAppointmentAPI.update(editingAppointment.id, appointmentData);
+      alert('Đã cập nhật lịch hẹn thành công!');
+      setShowUpdateAppointmentModal(false);
+      setEditingAppointment(null);
+      resetAppointmentForm();
+      loadAppointments();
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      if (error.response?.data?.message) {
+        alert(`Lỗi: ${error.response.data.message}`);
+      } else {
+        alert('Có lỗi xảy ra khi cập nhật lịch hẹn');
+      }
+    } finally {
+      setAppointmentFormLoading(false);
+    }
+  };
+
+  const handleEditAppointment = (appointment) => {
+    setEditingAppointment(appointment);
+    setAppointmentFormData({
+      customerPhoneNumber: appointment.customer?.phoneNumber || '',
+      employeeId: user?.userId || '',
+      appointmentTime: appointment.appointmentTime ? new Date(appointment.appointmentTime).toISOString().slice(0, 16) : '',
+      status: appointment.status || 'SCHEDULED',
+      description: appointment.description || '',
+    });
+    setShowUpdateAppointmentModal(true);
+  };
+
+  const resetAppointmentForm = () => {
+    setAppointmentFormData({
+      customerPhoneNumber: '',
+      employeeId: user?.userId || '',
+      appointmentTime: '',
+      status: 'SCHEDULED',
+      description: '',
+    });
+  };
+
+  // Category management functions
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    
+    if (!categoryFormData.name.trim()) {
+      alert('Vui lòng nhập tên danh mục');
+      return;
+    }
+
+    try {
+      setCategoryFormLoading(true);
+      await categoryAPI.create({
+        name: categoryFormData.name.trim(),
+        description: categoryFormData.description.trim() || '',
+      });
+      alert('Đã tạo danh mục thành công!');
+      setShowCreateCategoryModal(false);
+      resetCategoryForm();
+      loadCategoriesForManagement();
+      loadCategories(); // Also reload for product form dropdown
+    } catch (error) {
+      console.error('Error creating category:', error);
+      if (error.response?.data?.message) {
+        alert(`Lỗi: ${error.response.data.message}`);
+      } else {
+        alert('Có lỗi xảy ra khi tạo danh mục');
+      }
+    } finally {
+      setCategoryFormLoading(false);
+    }
+  };
+
+  const handleEditCategory = (category) => {
+    setEditingCategory(category);
+    setCategoryFormData({
+      name: category.name || '',
+      description: category.description || '',
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    resetCategoryForm();
+  };
+
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
+    
+    if (!categoryFormData.name.trim()) {
+      alert('Vui lòng nhập tên danh mục');
+      return;
+    }
+
+    if (!editingCategory) {
+      return;
+    }
+
+    try {
+      setCategoryFormLoading(true);
+      await categoryAPI.update(editingCategory.id, {
+        name: categoryFormData.name.trim(),
+        description: categoryFormData.description.trim() || '',
+      });
+      alert('Đã cập nhật danh mục thành công!');
+      setEditingCategory(null);
+      resetCategoryForm();
+      loadCategoriesForManagement();
+      loadCategories(); // Also reload for product form dropdown
+    } catch (error) {
+      console.error('Error updating category:', error);
+      if (error.response?.data?.message) {
+        alert(`Lỗi: ${error.response.data.message}`);
+      } else {
+        alert('Có lỗi xảy ra khi cập nhật danh mục');
+      }
+    } finally {
+      setCategoryFormLoading(false);
+    }
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryFormData({
+      name: '',
+      description: '',
+    });
+  };
+
+  // Discount functions
+  const loadDiscounts = async () => {
+    try {
+      setDiscountLoading(true);
+      const response = await employeeDiscountAPI.getByStatus(discountStatus, discountPage, 10);
+      const data = response.data?.content || [];
+      setDiscounts(data);
+      
+      if (response.data?.page?.totalPages !== undefined) {
+        setDiscountTotalPages(response.data.page.totalPages || 1);
+      } else {
+        setDiscountTotalPages(1);
+      }
+    } catch (error) {
+      console.error('Error loading discounts:', error);
+      setDiscounts([]);
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'discounts') {
+      loadDiscounts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, discountPage, discountStatus]);
+
+  const handleCreateManualDiscount = async (e) => {
+    e.preventDefault();
+    
+    if (!manualDiscountFormData.discountCode.trim()) {
+      alert('Vui lòng nhập mã giảm giá');
+      return;
+    }
+    if (!manualDiscountFormData.discountName.trim()) {
+      alert('Vui lòng nhập tên mã giảm giá');
+      return;
+    }
+    if (!manualDiscountFormData.percent || parseFloat(manualDiscountFormData.percent) <= 0) {
+      alert('Vui lòng nhập phần trăm giảm giá hợp lệ');
+      return;
+    }
+    if (!manualDiscountFormData.startDate) {
+      alert('Vui lòng chọn ngày bắt đầu');
+      return;
+    }
+    if (!manualDiscountFormData.endDate) {
+      alert('Vui lòng chọn ngày kết thúc');
+      return;
+    }
+
+    try {
+      setDiscountFormLoading(true);
+      const discountData = {
+        discountCode: manualDiscountFormData.discountCode.trim(),
+        discountName: manualDiscountFormData.discountName.trim(),
+        percent: parseFloat(manualDiscountFormData.percent),
+        startDate: `${manualDiscountFormData.startDate}:00`,
+        endDate: `${manualDiscountFormData.endDate}:00`,
+      };
+      
+      await employeeDiscountAPI.createManually(discountData);
+      alert('Đã tạo mã giảm giá thành công!');
+      setShowCreateManualDiscountModal(false);
+      resetManualDiscountForm();
+      loadDiscounts();
+    } catch (error) {
+      console.error('Error creating manual discount:', error);
+      if (error.response?.data?.message) {
+        alert(`Lỗi: ${error.response.data.message}`);
+      } else {
+        alert('Có lỗi xảy ra khi tạo mã giảm giá');
+      }
+    } finally {
+      setDiscountFormLoading(false);
+    }
+  };
+
+  const handleCreateAutoDiscount = async (e) => {
+    e.preventDefault();
+    
+    if (!autoDiscountFormData.discountName.trim()) {
+      alert('Vui lòng nhập tên mã giảm giá');
+      return;
+    }
+    if (!autoDiscountFormData.percent || parseFloat(autoDiscountFormData.percent) <= 0) {
+      alert('Vui lòng nhập phần trăm giảm giá hợp lệ');
+      return;
+    }
+    if (!autoDiscountFormData.startDate) {
+      alert('Vui lòng chọn ngày bắt đầu');
+      return;
+    }
+    if (!autoDiscountFormData.endDate) {
+      alert('Vui lòng chọn ngày kết thúc');
+      return;
+    }
+    if (autoDiscountFormData.totalLimit && parseInt(autoDiscountFormData.totalLimit) <= 0) {
+      alert('Vui lòng nhập giới hạn số lượng hợp lệ');
+      return;
+    }
+
+    try {
+      setDiscountFormLoading(true);
+      const discountData = {
+        discountName: autoDiscountFormData.discountName.trim(),
+        percent: parseFloat(autoDiscountFormData.percent),
+        startDate: `${autoDiscountFormData.startDate}:00`,
+        endDate: `${autoDiscountFormData.endDate}:00`,
+        totalLimit: autoDiscountFormData.totalLimit ? parseInt(autoDiscountFormData.totalLimit) : null,
+      };
+      
+      await employeeDiscountAPI.createAutomatically(discountData);
+      alert('Đã tạo mã giảm giá tự động thành công!');
+      setShowCreateAutoDiscountModal(false);
+      resetAutoDiscountForm();
+      loadDiscounts();
+    } catch (error) {
+      console.error('Error creating auto discount:', error);
+      if (error.response?.data?.message) {
+        alert(`Lỗi: ${error.response.data.message}`);
+      } else {
+        alert('Có lỗi xảy ra khi tạo mã giảm giá tự động');
+      }
+    } finally {
+      setDiscountFormLoading(false);
+    }
+  };
+
+  const resetManualDiscountForm = () => {
+    setManualDiscountFormData({
+      discountCode: '',
+      discountName: '',
+      percent: '',
+      startDate: '',
+      endDate: '',
+    });
+  };
+
+  const resetAutoDiscountForm = () => {
+    setAutoDiscountFormData({
+      discountName: '',
+      percent: '',
+      startDate: '',
+      endDate: '',
+      totalLimit: '',
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -780,6 +1232,26 @@ const EmployeePage = () => {
             <Button onClick={() => setShowCreateMedicalRecordModal(true)}>
               Tạo Bệnh Án Mới
             </Button>
+          )}
+          {activeTab === 'appointments' && (
+            <Button onClick={() => setShowCreateAppointmentModal(true)}>
+              Tạo Lịch Hẹn Mới
+            </Button>
+          )}
+          {activeTab === 'categories' && (
+            <Button onClick={() => setShowCreateCategoryModal(true)}>
+              Tạo Danh Mục Mới
+            </Button>
+          )}
+          {activeTab === 'discounts' && (
+            <div className="flex gap-2">
+              <Button onClick={() => setShowCreateManualDiscountModal(true)}>
+                Tạo Mã Thủ Công
+              </Button>
+              <Button onClick={() => setShowCreateAutoDiscountModal(true)}>
+                Tạo Mã Tự Động
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -818,6 +1290,45 @@ const EmployeePage = () => {
           }`}
         >
           Quản Lý Giao Hàng
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('appointments');
+            loadAppointments();
+          }}
+          className={`px-6 py-3 font-medium transition ${
+            activeTab === 'appointments'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Quản Lý Lịch Hẹn
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('categories');
+            loadCategoriesForManagement();
+          }}
+          className={`px-6 py-3 font-medium transition ${
+            activeTab === 'categories'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Quản Lý Danh Mục
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('discounts');
+            loadDiscounts();
+          }}
+          className={`px-6 py-3 font-medium transition ${
+            activeTab === 'discounts'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Quản Lý Mã Giảm Giá
         </button>
       </div>
 
@@ -2188,6 +2699,303 @@ const EmployeePage = () => {
         </div>
       )}
 
+      {/* Appointments Tab */}
+      {activeTab === 'appointments' && (
+        <div>
+          {appointmentLoading ? (
+            <Card>
+              <div className="text-center py-12">
+                <p className="text-gray-500">Đang tải lịch hẹn...</p>
+              </div>
+            </Card>
+          ) : appointments.length === 0 ? (
+            <Card>
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 text-lg mb-2">Không có lịch hẹn</p>
+                <p className="text-gray-400 text-sm">Chưa có lịch hẹn nào được tạo</p>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {appointments.map((appointment) => (
+                <Card key={appointment.id} className="border-l-4 border-blue-500">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">
+                        Lịch Hẹn #{appointment.id?.substring(0, 8)}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Số điện thoại khách hàng:</p>
+                          <p className="font-semibold">{appointment.customer?.phoneNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Thời gian:</p>
+                          <p className="font-semibold">{new Date(appointment.appointmentTime).toLocaleString('vi-VN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Trạng thái:</p>
+                          <p className={`font-semibold ${
+                            appointment.status === 'SCHEDULED' ? 'text-blue-600' :
+                            appointment.status === 'COMPLETED' ? 'text-green-600' :
+                            appointment.status === 'CANCELLED' ? 'text-red-600' :
+                            'text-gray-600'
+                          }`}>
+                            {appointment.status === 'SCHEDULED' ? 'Đã lên lịch' :
+                             appointment.status === 'COMPLETED' ? 'Hoàn thành' :
+                             appointment.status === 'CANCELLED' ? 'Đã hủy' :
+                             appointment.status}
+                          </p>
+                        </div>
+                        {appointment.description && (
+                          <div>
+                            <p className="text-gray-600">Mô tả:</p>
+                            <p className="font-semibold">{appointment.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleEditAppointment(appointment)}
+                    >
+                      Chỉnh Sửa
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+
+              {/* Pagination */}
+              {appointmentTotalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setAppointmentPage((p) => Math.max(0, p - 1))}
+                    disabled={appointmentPage === 0}
+                  >
+                    Trước
+                  </Button>
+                  <span className="px-4 py-2">
+                    Trang {appointmentPage + 1} / {appointmentTotalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setAppointmentPage((p) => Math.min(appointmentTotalPages - 1, p + 1))}
+                    disabled={appointmentPage >= appointmentTotalPages - 1}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Categories Tab */}
+      {activeTab === 'categories' && (
+        <div>
+          {categoryLoading ? (
+            <Card>
+              <div className="text-center py-12">
+                <p className="text-gray-500">Đang tải danh mục...</p>
+              </div>
+            </Card>
+          ) : categories.length === 0 ? (
+            <Card>
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <p className="text-gray-500 text-lg mb-2">Không có danh mục</p>
+                <p className="text-gray-400 text-sm">Chưa có danh mục nào được tạo</p>
+              </div>
+            </Card>
+          ) : (
+            <>
+              <Card className="overflow-x-auto mb-6">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-4">Tên Danh Mục</th>
+                      <th className="text-left p-4">Mô Tả</th>
+                      <th className="text-left p-4">Hành Động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.map((category) => (
+                      <tr key={category.id} className="border-b hover:bg-gray-50">
+                        <td className="p-4 font-semibold">{category.name || 'N/A'}</td>
+                        <td className="p-4">{category.description || 'N/A'}</td>
+                        <td className="p-4">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleEditCategory(category)}
+                            disabled={editingCategory?.id === category.id}
+                          >
+                            Sửa
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+
+              {/* Pagination */}
+              {categoryTotalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setCategoryPage((p) => Math.max(0, p - 1))}
+                    disabled={categoryPage === 0}
+                  >
+                    Trước
+                  </Button>
+                  <span className="px-4 py-2">
+                    Trang {categoryPage + 1} / {categoryTotalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setCategoryPage((p) => Math.min(categoryTotalPages - 1, p + 1))}
+                    disabled={categoryPage >= categoryTotalPages - 1}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Discounts Tab */}
+      {activeTab === 'discounts' && (
+        <div>
+          {/* Filter by Status */}
+          <Card className="mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <label className="text-sm font-semibold">Lọc theo trạng thái:</label>
+              <select
+                value={discountStatus}
+                onChange={(e) => {
+                  setDiscountStatus(e.target.value);
+                  setDiscountPage(0);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="ACTIVE">Hoạt động</option>
+                <option value="INACTIVE">Ngừng hoạt động</option>
+                <option value="EXPIRED">Hết hạn</option>
+              </select>
+            </div>
+          </Card>
+
+          {discountLoading ? (
+            <Card>
+              <div className="text-center py-12">
+                <p className="text-gray-500">Đang tải mã giảm giá...</p>
+              </div>
+            </Card>
+          ) : discounts.length === 0 ? (
+            <Card>
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-500 text-lg mb-2">Không có mã giảm giá</p>
+                <p className="text-gray-400 text-sm">Chưa có mã giảm giá nào với trạng thái này</p>
+              </div>
+            </Card>
+          ) : (
+            <>
+              <Card className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {discounts.map((discount) => (
+                    <Card key={discount.id} className="p-5 border-l-4 border-green-500">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-800">{discount.discountCode || 'N/A'}</h3>
+                          <p className="text-sm text-gray-600">{discount.discountName || 'N/A'}</p>
+                        </div>
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          -{discount.percent}%
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-gray-600">
+                            <strong>Bắt đầu:</strong> {new Date(discount.startDate).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-gray-600">
+                            <strong>Kết thúc:</strong> {new Date(discount.endDate).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                        {discount.totalLimit !== null && (
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span className="text-gray-600">
+                              <strong>Giới hạn:</strong> {discount.totalLimit} mã
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-gray-600">
+                            <strong>Đã dùng:</strong> {discount.usedCount || 0} mã
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Pagination */}
+              {discountTotalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDiscountPage((p) => Math.max(0, p - 1))}
+                    disabled={discountPage === 0}
+                  >
+                    Trước
+                  </Button>
+                  <span className="px-4 py-2">
+                    Trang {discountPage + 1} / {discountTotalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDiscountPage((p) => Math.min(discountTotalPages - 1, p + 1))}
+                    disabled={discountPage >= discountTotalPages - 1}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Delivery Modal */}
       <Modal
         isOpen={showDeliveryModal}
@@ -2301,6 +3109,431 @@ const EmployeePage = () => {
               <option value="CHOXEMHANGKHONTHU">Cho Xem Hàng Không Thử</option>
               <option value="KHONGCHOXEMHANG">Không Cho Xem Hàng</option>
             </select>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Appointment Modal */}
+      <Modal
+        isOpen={showCreateAppointmentModal}
+        onClose={() => {
+          setShowCreateAppointmentModal(false);
+          resetAppointmentForm();
+        }}
+        title="Tạo Lịch Hẹn Mới"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowCreateAppointmentModal(false);
+                resetAppointmentForm();
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleCreateAppointment} 
+              disabled={appointmentFormLoading}
+            >
+              {appointmentFormLoading ? 'Đang tạo...' : 'Tạo Lịch Hẹn'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateAppointment} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Số Điện Thoại Khách Hàng *</label>
+            <Input
+              type="tel"
+              placeholder="Nhập số điện thoại khách hàng"
+              value={appointmentFormData.customerPhoneNumber}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, customerPhoneNumber: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Thời Gian Hẹn *</label>
+            <Input
+              type="datetime-local"
+              value={appointmentFormData.appointmentTime}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, appointmentTime: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Trạng Thái *</label>
+            <select
+              value={appointmentFormData.status}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, status: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="SCHEDULED">Đã lên lịch</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Mô Tả</label>
+            <textarea
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Nhập mô tả lịch hẹn"
+              value={appointmentFormData.description}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Update Appointment Modal */}
+      <Modal
+        isOpen={showUpdateAppointmentModal}
+        onClose={() => {
+          setShowUpdateAppointmentModal(false);
+          setEditingAppointment(null);
+          resetAppointmentForm();
+        }}
+        title="Chỉnh Sửa Lịch Hẹn"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowUpdateAppointmentModal(false);
+                setEditingAppointment(null);
+                resetAppointmentForm();
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleUpdateAppointment} 
+              disabled={appointmentFormLoading}
+            >
+              {appointmentFormLoading ? 'Đang cập nhật...' : 'Cập Nhật'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleUpdateAppointment} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Thời Gian Hẹn *</label>
+            <Input
+              type="datetime-local"
+              value={appointmentFormData.appointmentTime}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, appointmentTime: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Trạng Thái *</label>
+            <select
+              value={appointmentFormData.status}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, status: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="SCHEDULED">Đã lên lịch</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Mô Tả</label>
+            <textarea
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Nhập mô tả lịch hẹn"
+              value={appointmentFormData.description}
+              onChange={(e) => setAppointmentFormData({ ...appointmentFormData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Category Modal */}
+      <Modal
+        isOpen={showCreateCategoryModal && !editingCategory}
+        onClose={() => {
+          setShowCreateCategoryModal(false);
+          resetCategoryForm();
+        }}
+        title="Tạo Danh Mục Mới"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowCreateCategoryModal(false);
+                resetCategoryForm();
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleCreateCategory} 
+              disabled={categoryFormLoading}
+            >
+              {categoryFormLoading ? 'Đang tạo...' : 'Tạo Danh Mục'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateCategory} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tên Danh Mục *</label>
+            <Input
+              type="text"
+              placeholder="Ví dụ: Thức Ăn"
+              value={categoryFormData.name}
+              onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Mô Tả</label>
+            <textarea
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Ví dụ: Thức ăn cho thú cưng"
+              value={categoryFormData.description}
+              onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Update Category Modal */}
+      <Modal
+        isOpen={!!editingCategory}
+        onClose={() => {
+          setEditingCategory(null);
+          resetCategoryForm();
+        }}
+        title="Chỉnh Sửa Danh Mục"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEditingCategory(null);
+                resetCategoryForm();
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleUpdateCategory} 
+              disabled={categoryFormLoading}
+            >
+              {categoryFormLoading ? 'Đang cập nhật...' : 'Cập Nhật'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleUpdateCategory} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tên Danh Mục *</label>
+            <Input
+              type="text"
+              placeholder="Ví dụ: Thức Ăn"
+              value={categoryFormData.name}
+              onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Mô Tả</label>
+            <textarea
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Ví dụ: Thức ăn cho thú cưng"
+              value={categoryFormData.description}
+              onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Manual Discount Modal */}
+      <Modal
+        isOpen={showCreateManualDiscountModal}
+        onClose={() => {
+          setShowCreateManualDiscountModal(false);
+          resetManualDiscountForm();
+        }}
+        title="Tạo Mã Giảm Giá Thủ Công"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowCreateManualDiscountModal(false);
+                resetManualDiscountForm();
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleCreateManualDiscount} 
+              disabled={discountFormLoading}
+            >
+              {discountFormLoading ? 'Đang tạo...' : 'Tạo Mã'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateManualDiscount} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Mã Giảm Giá *</label>
+            <Input
+              type="text"
+              placeholder="Ví dụ: BLACKFRIDAY30"
+              value={manualDiscountFormData.discountCode}
+              onChange={(e) => setManualDiscountFormData({ ...manualDiscountFormData, discountCode: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tên Mã Giảm Giá *</label>
+            <Input
+              type="text"
+              placeholder="Ví dụ: BLACKFRIDAY"
+              value={manualDiscountFormData.discountName}
+              onChange={(e) => setManualDiscountFormData({ ...manualDiscountFormData, discountName: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Phần Trăm Giảm Giá (%) *</label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              placeholder="Ví dụ: 30"
+              value={manualDiscountFormData.percent}
+              onChange={(e) => setManualDiscountFormData({ ...manualDiscountFormData, percent: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Ngày Bắt Đầu *</label>
+            <Input
+              type="datetime-local"
+              value={manualDiscountFormData.startDate}
+              onChange={(e) => setManualDiscountFormData({ ...manualDiscountFormData, startDate: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Ngày Kết Thúc *</label>
+            <Input
+              type="datetime-local"
+              value={manualDiscountFormData.endDate}
+              onChange={(e) => setManualDiscountFormData({ ...manualDiscountFormData, endDate: e.target.value })}
+              required
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Auto Discount Modal */}
+      <Modal
+        isOpen={showCreateAutoDiscountModal}
+        onClose={() => {
+          setShowCreateAutoDiscountModal(false);
+          resetAutoDiscountForm();
+        }}
+        title="Tạo Mã Giảm Giá Tự Động"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowCreateAutoDiscountModal(false);
+                resetAutoDiscountForm();
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleCreateAutoDiscount} 
+              disabled={discountFormLoading}
+            >
+              {discountFormLoading ? 'Đang tạo...' : 'Tạo Mã'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateAutoDiscount} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tên Mã Giảm Giá *</label>
+            <Input
+              type="text"
+              placeholder="Ví dụ: Anniversary 1st"
+              value={autoDiscountFormData.discountName}
+              onChange={(e) => setAutoDiscountFormData({ ...autoDiscountFormData, discountName: e.target.value })}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">Mã giảm giá sẽ được tạo tự động</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Phần Trăm Giảm Giá (%) *</label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              placeholder="Ví dụ: 25"
+              value={autoDiscountFormData.percent}
+              onChange={(e) => setAutoDiscountFormData({ ...autoDiscountFormData, percent: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Ngày Bắt Đầu *</label>
+            <Input
+              type="datetime-local"
+              value={autoDiscountFormData.startDate}
+              onChange={(e) => setAutoDiscountFormData({ ...autoDiscountFormData, startDate: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Ngày Kết Thúc *</label>
+            <Input
+              type="datetime-local"
+              value={autoDiscountFormData.endDate}
+              onChange={(e) => setAutoDiscountFormData({ ...autoDiscountFormData, endDate: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-1">Giới Hạn Số Lượng (Tùy chọn)</label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="Ví dụ: 100"
+              value={autoDiscountFormData.totalLimit}
+              onChange={(e) => setAutoDiscountFormData({ ...autoDiscountFormData, totalLimit: e.target.value })}
+            />
+            <p className="text-xs text-gray-500 mt-1">Để trống nếu không giới hạn số lượng sử dụng</p>
           </div>
         </form>
       </Modal>

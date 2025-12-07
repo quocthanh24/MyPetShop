@@ -136,7 +136,7 @@ const CategoryPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Quản Lý Danh Mục</h1>
+        <h1 className="text-3xl font-bold">Quản Lý Thể Loại</h1>
         <Button
           onClick={() => {
             if (editingCategory) {
@@ -154,11 +154,11 @@ const CategoryPage = () => {
       {/* Create Category Form */}
       {showCreateForm && !editingCategory && (
         <Card className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Tạo Danh Mục Mới</h2>
+          <h2 className="text-2xl font-bold mb-4">Tạo Thể Loại Mới</h2>
           <form onSubmit={handleCreateCategory}>
             <div className="mb-4">
               <Input
-                label="Tên Danh Mục"
+                label="Tên Thể Loại"
                 placeholder="Ví dụ: Thức Ăn"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -199,7 +199,7 @@ const CategoryPage = () => {
       {/* Edit Category Form */}
       {editingCategory && (
         <Card className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Chỉnh Sửa Danh Mục</h2>
+          <h2 className="text-2xl font-bold mb-4">Chỉnh Sửa Thể Loại</h2>
           <form onSubmit={handleUpdateCategory}>
             <div className="mb-4">
               <Input
@@ -249,7 +249,7 @@ const CategoryPage = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-4">Tên Danh Mục</th>
+                  <th className="text-left p-4">Tên Thể Loại</th>
                   <th className="text-left p-4">Mô Tả</th>
                   <th className="text-left p-4">Hành Động</th>
                 </tr>

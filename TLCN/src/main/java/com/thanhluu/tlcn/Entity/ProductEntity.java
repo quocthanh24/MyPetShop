@@ -41,9 +41,6 @@ public class ProductEntity {
     @Column(length = 300)
     private String thumbnailUrl;
 
-    private Double averageRating = 0.0;
-
-    private Integer ratingCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -55,6 +52,4 @@ public class ProductEntity {
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private List<CartItemEntity>  cartItems = new ArrayList<>();
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
-    private List<RatingEntity> ratings = new ArrayList<>();
 }

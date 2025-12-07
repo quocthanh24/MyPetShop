@@ -187,16 +187,6 @@ export const adminAPI = {
     api.put(`/admin/create-employee-account/${userId}`),
 };
 
-// Employee Discount APIs
-export const employeeDiscountAPI = {
-  createManually: (discountData) => 
-    api.post('/employees/discounts/create-manually', discountData),
-  createAutomatically: (discountData) => 
-    api.post('/employees/discounts/create-automatically', discountData),
-  getByStatus: (status) => 
-    api.get('/employees/discounts/status', { params: { status } }),
-};
-
 // Employee Appointment APIs
 export const employeeAppointmentAPI = {
   getAll: (page = 0, size = 10) => 
@@ -217,6 +207,22 @@ export const employeeDeliveryAPI = {
     api.put(`/employees/delivery/orders/delevering/${orderNumber}`),
   updateToDelivered: (orderNumber) =>
     api.put(`/employees/delivered/orders/delevering/${orderNumber}`),
+};
+
+// Customer Appointment APIs
+export const customerAppointmentAPI = {
+  getAppointments: (userId, page = 0, size = 10) =>
+    api.get('/customers/appointments', { params: { userId, page, size } }),
+};
+
+// Employee Discount APIs
+export const employeeDiscountAPI = {
+  createManually: (discountData) => 
+    api.post('/employees/discounts/create-manually', discountData),
+  createAutomatically: (discountData) => 
+    api.post('/employees/discounts/create-automatically', discountData),
+  getByStatus: (status, page = 0, size = 10) => 
+    api.get('/employees/discounts/status', { params: { status, page, size } }),
 };
 
 export default api;

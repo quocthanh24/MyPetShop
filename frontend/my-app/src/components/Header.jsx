@@ -52,18 +52,18 @@ const Header = () => {
                   Giỏ Hàng
                 </Link>
                 <Link 
-                  to="/customer?tab=orders" 
+                  to="/customer?tab=appointments" 
                   className={`transition ${
-                    isCustomerPage && activeTab === 'orders'
+                    isCustomerPage && activeTab === 'appointments'
                       ? 'text-primary-600 font-semibold border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-primary-600'
                   }`}
                 >
-                  Đơn Hàng
+                  Lịch Hẹn
                 </Link>
               </>
             )}
-            {isAuthenticated && (
+            {isAuthenticated && user?.role !== 'EMPLOYEE' && user?.role !== 'CUSTOMER' && (
               <Link to="/appointments" className="text-gray-700 hover:text-primary-600 transition">
                 Quản Lý Lịch Hẹn
               </Link>
@@ -77,33 +77,35 @@ const Header = () => {
                   </Link>
                 )}
                 {user?.role === 'EMPLOYEE' && (
-                  <>
-                    <Link to="/employee" className="text-gray-700 hover:text-primary-600 transition">
-                      Quản Lý Sản Phẩm
-                    </Link>
-                    <Link to="/categories" className="text-gray-700 hover:text-primary-600 transition">
-                      Quản Lý Danh Mục
-                    </Link>
-                  </>
+                  <Link 
+                    to="/employee" 
+                    className={`transition ${
+                      location.pathname === '/employee'
+                        ? 'text-primary-600 font-semibold border-b-2 border-primary-600'
+                        : 'text-gray-700 hover:text-primary-600'
+                    }`}
+                  >
+                    Quản Lý
+                  </Link>
                 )}
                 <span className="text-gray-700">User ID: {user?.userId?.substring(0, 8)}...</span>
                 <button
                   onClick={handleLogout}
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
                 >
-                  Logout
+                  Đăng Xuất
                 </button>
               </>
             ) : (
               <>
                 <Link to="/login" className="text-gray-700 hover:text-primary-600 transition">
-                  Login
+                  Đăng Nhập
                 </Link>
                 <Link
                   to="/register"
                   className="bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 transition"
                 >
-                  Register
+                  Đăng Ký 
                 </Link>
               </>
             )}

@@ -69,6 +69,4 @@ public class UserEntity {
     @OneToMany(mappedBy = "employee")
     private List<AppointmentEntity> appointmentsAsEmployee;
 
-    @OneToMany(mappedBy = "customer")
-    private List<RatingEntity> ratings;
 }

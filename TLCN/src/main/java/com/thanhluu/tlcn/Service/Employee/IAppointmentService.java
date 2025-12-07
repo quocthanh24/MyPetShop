@@ -11,6 +11,7 @@ import java.util.List;
 public interface IAppointmentService {
   Page<AppointmentResp> getAppointments(Pageable pageable);
 
+  Page<AppointmentResp> getAppointmentsByCustomer(String userId, Pageable pageable);
   AppointmentResp bookAppointment(CreateAppointmentReq request);
 
   AppointmentResp updateAppointment(String id, UpdateAppointmentReq request);
