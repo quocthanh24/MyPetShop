@@ -533,7 +533,7 @@ const EmployeePage = () => {
       return;
     }
     if (!formData.categoryName) {
-      alert('Vui lòng chọn danh mục');
+      alert('Vui lòng chọn thể loại');
       return;
     }
     if (!thumbnailFile) {
@@ -607,7 +607,7 @@ const EmployeePage = () => {
       return;
     }
     if (!formData.categoryName) {
-      alert('Vui lòng chọn danh mục');
+      alert('Vui lòng chọn thể loại');
       return;
     }
 
@@ -986,7 +986,7 @@ const EmployeePage = () => {
     e.preventDefault();
     
     if (!categoryFormData.name.trim()) {
-      alert('Vui lòng nhập tên danh mục');
+      alert('Vui lòng nhập tên thể loại');
       return;
     }
 
@@ -996,7 +996,7 @@ const EmployeePage = () => {
         name: categoryFormData.name.trim(),
         description: categoryFormData.description.trim() || '',
       });
-      alert('Đã tạo danh mục thành công!');
+      alert('Đã tạo thể loại thành công!');
       setShowCreateCategoryModal(false);
       resetCategoryForm();
       loadCategoriesForManagement();
@@ -1006,7 +1006,7 @@ const EmployeePage = () => {
       if (error.response?.data?.message) {
         alert(`Lỗi: ${error.response.data.message}`);
       } else {
-        alert('Có lỗi xảy ra khi tạo danh mục');
+        alert('Có lỗi xảy ra khi tạo thể loại');
       }
     } finally {
       setCategoryFormLoading(false);
@@ -1030,7 +1030,7 @@ const EmployeePage = () => {
     e.preventDefault();
     
     if (!categoryFormData.name.trim()) {
-      alert('Vui lòng nhập tên danh mục');
+      alert('Vui lòng nhập tên thể loại');
       return;
     }
 
@@ -1044,7 +1044,7 @@ const EmployeePage = () => {
         name: categoryFormData.name.trim(),
         description: categoryFormData.description.trim() || '',
       });
-      alert('Đã cập nhật danh mục thành công!');
+      alert('Đã cập nhật thể loại thành công!');
       setEditingCategory(null);
       resetCategoryForm();
       loadCategoriesForManagement();
@@ -1054,7 +1054,7 @@ const EmployeePage = () => {
       if (error.response?.data?.message) {
         alert(`Lỗi: ${error.response.data.message}`);
       } else {
-        alert('Có lỗi xảy ra khi cập nhật danh mục');
+        alert('Có lỗi xảy ra khi cập nhật thể loại');
       }
     } finally {
       setCategoryFormLoading(false);
@@ -1233,14 +1233,14 @@ const EmployeePage = () => {
               Tạo Bệnh Án Mới
             </Button>
           )}
-          {activeTab === 'appointments' && (
+          {activeTab === 'appointments' && user?.role !== 'ADMIN' && (
             <Button onClick={() => setShowCreateAppointmentModal(true)}>
               Tạo Lịch Hẹn Mới
             </Button>
           )}
           {activeTab === 'categories' && (
             <Button onClick={() => setShowCreateCategoryModal(true)}>
-              Tạo Danh Mục Mới
+              Tạo Thể Loại Mới
             </Button>
           )}
           {activeTab === 'discounts' && (
@@ -1291,19 +1291,21 @@ const EmployeePage = () => {
         >
           Quản Lý Giao Hàng
         </button>
-        <button
-          onClick={() => {
-            setActiveTab('appointments');
-            loadAppointments();
-          }}
-          className={`px-6 py-3 font-medium transition ${
-            activeTab === 'appointments'
-              ? 'border-b-2 border-primary-600 text-primary-600'
-              : 'text-gray-600 hover:text-gray-800'
-          }`}
-        >
-          Quản Lý Lịch Hẹn
-        </button>
+        {user?.role !== 'ADMIN' && (
+          <button
+            onClick={() => {
+              setActiveTab('appointments');
+              loadAppointments();
+            }}
+            className={`px-6 py-3 font-medium transition ${
+              activeTab === 'appointments'
+                ? 'border-b-2 border-primary-600 text-primary-600'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Quản Lý Lịch Hẹn
+          </button>
+        )}
         <button
           onClick={() => {
             setActiveTab('categories');
@@ -1315,7 +1317,7 @@ const EmployeePage = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          Quản Lý Danh Mục
+          Quản Lý Thể Loại
         </button>
         <button
           onClick={() => {
@@ -1345,7 +1347,7 @@ const EmployeePage = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-800">Tìm Kiếm & Lọc Sản Phẩm</h2>
-                <p className="text-sm text-gray-600">Tìm kiếm theo tên hoặc lọc theo danh mục</p>
+                <p className="text-sm text-gray-600">Tìm kiếm theo tên hoặc lọc theo thể loại</p>
               </div>
             </div>
             <form onSubmit={handleSearch} className="flex gap-4 mb-4">
@@ -1378,7 +1380,7 @@ const EmployeePage = () => {
             </form>
 
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Lọc theo danh mục:</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Lọc theo thể loại:</p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   type="button"
@@ -1438,7 +1440,7 @@ const EmployeePage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
                 <p className="text-gray-500 text-lg mb-2">Không tìm thấy sản phẩm nào</p>
-                <p className="text-gray-400 text-sm">Thử thay đổi từ khóa tìm kiếm hoặc danh mục</p>
+                <p className="text-gray-400 text-sm">Thử thay đổi từ khóa tìm kiếm hoặc thể loại</p>
               </div>
             </Card>
           ) : (
@@ -1724,7 +1726,7 @@ const EmployeePage = () => {
             </div>
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Danh Mục <span className="text-red-500">*</span>
+                Thể Loại <span className="text-red-500">*</span>
               </label>
               <select
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -1732,7 +1734,7 @@ const EmployeePage = () => {
                 onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
                 required
               >
-                <option value="">Chọn danh mục</option>
+                <option value="">Chọn thể loại</option>
                 {categories.map((category) => (
                   <option key={category.id || category.name} value={category.name}>
                     {category.name}
@@ -1888,7 +1890,7 @@ const EmployeePage = () => {
             </div>
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Danh Mục <span className="text-red-500">*</span>
+                Thể Loại <span className="text-red-500">*</span>
               </label>
               <select
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -1896,7 +1898,7 @@ const EmployeePage = () => {
                 onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
                 required
               >
-                <option value="">Chọn danh mục</option>
+                <option value="">Chọn thể loại</option>
                 {categories.map((category) => (
                   <option key={category.id || category.name} value={category.name}>
                     {category.name}
@@ -2700,7 +2702,7 @@ const EmployeePage = () => {
       )}
 
       {/* Appointments Tab */}
-      {activeTab === 'appointments' && (
+      {activeTab === 'appointments' && user?.role !== 'ADMIN' && (
         <div>
           {appointmentLoading ? (
             <Card>
@@ -2803,7 +2805,7 @@ const EmployeePage = () => {
           {categoryLoading ? (
             <Card>
               <div className="text-center py-12">
-                <p className="text-gray-500">Đang tải danh mục...</p>
+                <p className="text-gray-500">Đang tải thể loại...</p>
               </div>
             </Card>
           ) : categories.length === 0 ? (
@@ -2812,8 +2814,8 @@ const EmployeePage = () => {
                 <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
-                <p className="text-gray-500 text-lg mb-2">Không có danh mục</p>
-                <p className="text-gray-400 text-sm">Chưa có danh mục nào được tạo</p>
+                <p className="text-gray-500 text-lg mb-2">Không có thể loại</p>
+                <p className="text-gray-400 text-sm">Chưa có thể loại nào được tạo</p>
               </div>
             </Card>
           ) : (
@@ -2822,7 +2824,7 @@ const EmployeePage = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-4">Tên Danh Mục</th>
+                      <th className="text-left p-4">Tên Thể Loại</th>
                       <th className="text-left p-4">Mô Tả</th>
                       <th className="text-left p-4">Hành Động</th>
                     </tr>
@@ -3263,7 +3265,7 @@ const EmployeePage = () => {
           setShowCreateCategoryModal(false);
           resetCategoryForm();
         }}
-        title="Tạo Danh Mục Mới"
+        title="Tạo Thể Loại Mới"
         footer={
           <>
             <Button
@@ -3279,14 +3281,14 @@ const EmployeePage = () => {
               onClick={handleCreateCategory} 
               disabled={categoryFormLoading}
             >
-              {categoryFormLoading ? 'Đang tạo...' : 'Tạo Danh Mục'}
+              {categoryFormLoading ? 'Đang tạo...' : 'Tạo Thể Loại'}
             </Button>
           </>
         }
       >
         <form onSubmit={handleCreateCategory} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold mb-1">Tên Danh Mục *</label>
+            <label className="block text-sm font-semibold mb-1">Tên Thể Loại *</label>
             <Input
               type="text"
               placeholder="Ví dụ: Thức Ăn"
@@ -3316,7 +3318,7 @@ const EmployeePage = () => {
           setEditingCategory(null);
           resetCategoryForm();
         }}
-        title="Chỉnh Sửa Danh Mục"
+        title="Chỉnh Sửa Thể Loại"
         footer={
           <>
             <Button
@@ -3339,7 +3341,7 @@ const EmployeePage = () => {
       >
         <form onSubmit={handleUpdateCategory} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold mb-1">Tên Danh Mục *</label>
+            <label className="block text-sm font-semibold mb-1">Tên Thể Loại *</label>
             <Input
               type="text"
               placeholder="Ví dụ: Thức Ăn"

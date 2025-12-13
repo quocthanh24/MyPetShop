@@ -244,7 +244,9 @@ public class OrderService implements IOrderService {
     log.info("Shipping Request : {}", request.toString());
     OrderEntity order = orderRepository.findByOrderNumber(request.getOrderNumber())
       .orElseThrow(() -> new BadRequestException(ErrorCode.ORDER_NOT_FOUND));
-
+    // Set order status to OUT FOR DELIVERY
+    order.setOrderStatus(OrderStatus.OUT_FOR_DELIVERY);
+    // Set customer's address and sender's address
     UserEntity customer = order.getCustomer();
     UserEntity sender = UserEntity.builder()
       .address(request.getSenderAddress())

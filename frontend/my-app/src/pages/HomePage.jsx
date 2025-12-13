@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import { useAuth } from '../context/AuthContext';
 
 const HomePage = () => {
+  const { user } = useAuth();
+  
+  // Determine the appointments link based on user role
+  const appointmentsLink = user?.role === 'CUSTOMER' 
+    ? '/customer?tab=appointments' 
+    : '/appointments';
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -14,7 +22,7 @@ const HomePage = () => {
             <Link to="/customer?tab=products">
               <Button variant="secondary">Xem Sản Phẩm</Button>
             </Link>
-            <Link to="/appointments">
+            <Link to={appointmentsLink}>
               <Button variant="secondary">Xem Lịch Hẹn</Button>
             </Link>
           </div>

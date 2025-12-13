@@ -35,7 +35,7 @@ const LoginPage = () => {
       if (result.role === 'ADMIN') {
         navigate('/admin');
       } else if (result.role === 'EMPLOYEE') {
-        navigate('/categories');
+        navigate('/');
       } else {
         navigate('/');
       }

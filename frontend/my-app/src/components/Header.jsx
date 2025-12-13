@@ -63,7 +63,7 @@ const Header = () => {
                 </Link>
               </>
             )}
-            {isAuthenticated && user?.role !== 'EMPLOYEE' && user?.role !== 'CUSTOMER' && (
+            {isAuthenticated && user?.role !== 'EMPLOYEE' && user?.role !== 'CUSTOMER' && user?.role !== 'ADMIN' && (
               <Link to="/appointments" className="text-gray-700 hover:text-primary-600 transition">
                 Quản Lý Lịch Hẹn
               </Link>
